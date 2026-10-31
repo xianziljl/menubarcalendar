@@ -1,0 +1,536 @@
+import SwiftUI
+import AppKit
+import EventKit
+
+struct CalendarPanelView: View {
+    @AppStorage("showLunar")
+    private var showLunar = L10n.isChinese
+
+    @AppStorage("showHolidayBadges")
+    private var showHolidayBadges = L10n.isChinese
+
+    @AppStorage("firstWeekday")
+    private var firstWeekday = 1
+
+    @AppStorage("monthDisplayMode")
+    private var monthDisplayModeRaw = MonthDisplayMode.single.rawValue
+
+    @AppStorage("dualMonthLayout")
+    private var dualMonthLayoutRaw = DualMonthLayout.horizontal.rawValue
+
+    @AppStorage("showYearSwitchButtons")
+    private var showYearSwitchButtons = false
+
+    @StateObject private var eventsModel = CalendarEventsModel()
+    @StateObject private var holidayModel = HolidayModel()
+    @State private var displayedMonth = Calendar.current.date(
+        from: Calendar.current.dateComponents([.year, .month], from: Date())
+    ) ?? Date()
+    @State private var selectedDate = Date()
+
+    private let calendar = Calendar.current
+    private let singlePanelWidth: CGFloat = 284
+    private let dualMonthSpacing: CGFloat = 16
+    private let dualMonthWidth: CGFloat = 232
+
+    private var monthDisplayMode: MonthDisplayMode {
+        MonthDisplayMode(rawValue: monthDisplayModeRaw) ?? .single
+    }
+
+    private var dualMonthLayout: DualMonthLayout {
+        DualMonthLayout(rawValue: dualMonthLayoutRaw) ?? .horizontal
+    }
+
+    private var isCompactHeader: Bool {
+        showYearSwitchButtons && !(monthDisplayMode == .dual && dualMonthLayout == .horizontal)
+    }
+
+    private var panelWidth: CGFloat {
+        if monthDisplayMode == .dual && dualMonthLayout == .horizontal {
+            return dualMonthWidth * 2 + dualMonthSpacing + 28
+        }
+        return singlePanelWidth
+    }
+
+    private var calendarContentWidth: CGFloat {
+        panelWidth - 28
+    }
+
+    private var monthCount: Int {
+        monthDisplayMode == .dual ? 2 : 1
+    }
+
+    private var headerButtonWidth: CGFloat {
+        isCompactHeader ? 18 : 22
+    }
+
+    private var headerButtonHeight: CGFloat {
+        isCompactHeader ? 18 : 22
+    }
+
+    private var headerButtonSpacing: CGFloat {
+        isCompactHeader ? 0 : 1
+    }
+
+    private var headerGroupSpacing: CGFloat {
+        isCompactHeader ? 2 : 5
+    }
+
+    private var optionsMenuWidth: CGFloat {
+        isCompactHeader ? 18 : 22
+    }
+
+    private var optionsMenuHeight: CGFloat {
+        isCompactHeader ? 18 : 22
+    }
+
+    var body: some View {
+        VStack(spacing: 12) {
+            header
+            weekHeader
+            monthGrid
+            Divider()
+            eventSection
+        }
+        .padding(14)
+        .frame(width: panelWidth)
+        .task {
+            selectedDate = Date()
+            displayedMonth = monthStart(for: Date())
+            await eventsModel.requestAccessIfNeeded()
+            await eventsModel.load(
+                for: selectedDate,
+                displayedMonth: displayedMonth,
+                monthCount: monthCount
+            )
+            await holidayModel.refreshIfNeeded(for: Date())
+        }
+        .onChange(of: selectedDate) { newValue in
+            let targetMonth = monthStart(for: newValue)
+            let isWithinDisplayedRange = isDate(
+                newValue,
+                inDisplayedMonthsFrom: displayedMonth
+            )
+
+            if !isWithinDisplayedRange {
+                displayedMonth = targetMonth
+            }
+
+            Task {
+                await eventsModel.load(
+                    for: newValue,
+                    displayedMonth: displayedMonth,
+                    monthCount: monthCount
+                )
+            }
+        }
+        .onChange(of: monthDisplayModeRaw) { _ in
+            reloadEvents()
+        }
+        .onChange(of: dualMonthLayoutRaw) { _ in
+            reloadEvents()
+        }
+    }
+
+    private var header: some View {
+        HStack(alignment: .center, spacing: 8) {
+            Text(monthTitle)
+                .font(.system(size: isCompactHeader ? 13 : 15, weight: .semibold))
+                .foregroundStyle(Color.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            HStack(spacing: headerGroupSpacing) {
+                if showYearSwitchButtons {
+                    Button {
+                        moveYear(-1)
+                    } label: {
+                        Image(systemName: "chevron.left.2")
+                            .font(.system(size: isCompactHeader ? 10 : 12, weight: .semibold))
+                            .frame(width: headerButtonWidth, height: headerButtonHeight)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .help(L10n.text("Previous Year"))
+                }
+
+                HStack(spacing: headerButtonSpacing) {
+                    Button {
+                        moveMonth(-1)
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: isCompactHeader ? 10 : showYearSwitchButtons ? 12 : 13, weight: .semibold))
+                            .frame(width: headerButtonWidth, height: headerButtonHeight)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .help(L10n.text("Previous Month"))
+
+                    Button {
+                        showToday()
+                    } label: {
+                        Image(systemName: "smallcircle.filled.circle")
+                            .font(.system(size: isCompactHeader ? 10 : showYearSwitchButtons ? 12 : 13, weight: .semibold))
+                            .frame(width: headerButtonWidth, height: headerButtonHeight)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .help(L10n.text("Today"))
+
+                    Button {
+                        moveMonth(1)
+                    } label: {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: isCompactHeader ? 10 : showYearSwitchButtons ? 12 : 13, weight: .semibold))
+                            .frame(width: headerButtonWidth, height: headerButtonHeight)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .help(L10n.text("Next Month"))
+                }
+
+                if showYearSwitchButtons {
+                    Button {
+                        moveYear(1)
+                    } label: {
+                        Image(systemName: "chevron.right.2")
+                            .font(.system(size: isCompactHeader ? 10 : 12, weight: .semibold))
+                            .frame(width: headerButtonWidth, height: headerButtonHeight)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .help(L10n.text("Next Year"))
+                }
+
+                optionsMenu
+                    .padding(.leading, showYearSwitchButtons ? 6 : 0)
+                    .frame(width: optionsMenuWidth, height: optionsMenuHeight)
+                    .fixedSize()
+                    .layoutPriority(2)
+            }
+        }
+    }
+
+    private var optionsMenu: some View {
+        Menu {
+            Toggle(L10n.text("Dual Month Display"), isOn: dualMonthDisplayBinding)
+
+            Toggle(L10n.text("Show lunar"), isOn: $showLunar)
+
+            Divider()
+
+            Button {
+                CalendarOpener.openCalendarApp()
+            } label: {
+                Label(L10n.text("Open Calendar App"), systemImage: "calendar")
+            }
+
+            Button {
+                openSettings()
+            } label: {
+                Label(L10n.text("Settings"), systemImage: "gearshape")
+            }
+
+            Divider()
+
+            Button {
+                NSApp.terminate(nil)
+            } label: {
+                Label(L10n.text("Quit"), systemImage: "power")
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.system(size: isCompactHeader ? 10 : showYearSwitchButtons ? 12 : 13, weight: .semibold))
+                    .foregroundStyle(.primary)
+                .frame(width: optionsMenuWidth, height: optionsMenuHeight)
+                .contentShape(Rectangle())
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .help(L10n.text("More"))
+    }
+
+    private var dualMonthDisplayBinding: Binding<Bool> {
+        Binding(
+            get: { monthDisplayMode == .dual },
+            set: { isEnabled in
+                monthDisplayModeRaw = isEnabled
+                    ? MonthDisplayMode.dual.rawValue
+                    : MonthDisplayMode.single.rawValue
+            }
+        )
+    }
+
+    private var monthTitle: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = L10n.isChinese ? "yyyy年M月" : "MMMM yyyy"
+        return formatter.string(from: selectedDate)
+    }
+
+    private var weekHeader: some View {
+        Group {
+            if monthCount == 2 && dualMonthLayout == .horizontal {
+                HStack(spacing: dualMonthSpacing) {
+                    weekdayHeader
+                    weekdayHeader
+                }
+                .frame(width: calendarContentWidth)
+            } else {
+                weekdayHeader
+            }
+        }
+    }
+
+    private var weekdayHeader: some View {
+        HStack(spacing: 0) {
+            ForEach(weekdays, id: \.weekday) { weekday in
+                Text(weekday.symbol)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(weekday.isWeekend ? Color.primary.opacity(0.38) : Color.primary.opacity(0.72))
+                    .frame(maxWidth: .infinity)
+            }
+        }
+    }
+
+    private var monthGrid: some View {
+        CalendarPagerView(
+            month: displayedMonth,
+            selectedDate: $selectedDate,
+            firstWeekday: firstWeekday,
+            showLunar: showLunar,
+            showHolidayBadges: showHolidayBadges,
+            eventDots: eventsModel.eventDots,
+            holidayInfo: holidayModel.holidayInfo,
+            width: calendarContentWidth,
+            monthCount: monthCount,
+            isVerticalDualLayout: dualMonthLayout == .vertical,
+            dualMonthSpacing: dualMonthSpacing,
+            onSwipe: moveMonth
+        )
+    }
+
+    private var eventSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(dayTitle)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color.primary)
+                Spacer()
+                if showLunar {
+                    Text(LunarDateFormatter.monthAndDayText(for: selectedDate))
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+            }
+
+            if !eventsModel.hasAccess {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(
+                        eventsModel.isDenied
+                            ? L10n.text("Calendar access was denied.")
+                            : L10n.text("Calendar access has not been granted.")
+                    )
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+
+                    if eventsModel.isDenied {
+                        Button(L10n.text("Open Calendar Permissions")) {
+                            CalendarOpener.openPermissionSettings()
+                        }
+                        .controlSize(.small)
+                    } else {
+                        Button(L10n.text("Request Calendar Access")) {
+                            Task {
+                                await eventsModel.requestAccess()
+                            }
+                        }
+                        .controlSize(.small)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, 4)
+            } else if eventsModel.isLoading && eventsModel.items.isEmpty {
+                HStack {
+                    Spacer()
+                    ProgressView()
+                        .controlSize(.small)
+                    Spacer()
+                }
+                .padding(.vertical, 6)
+            } else if eventsModel.items.isEmpty {
+                Text(L10n.text("No events for this day."))
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 4)
+            } else {
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(eventsModel.items) { event in
+                        EventRowView(event: event)
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var dayTitle: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = L10n.isChinese ? "M月d日 EEEE" : "EEEE, MMM d"
+        return formatter.string(from: selectedDate)
+    }
+
+    private var weekdays: [WeekdayItem] {
+        var result: [WeekdayItem] = []
+        for offset in 0..<7 {
+            let weekday = ((firstWeekday - 1 + offset) % 7) + 1
+            let symbol = calendar.shortStandaloneWeekdaySymbols[weekday - 1]
+            result.append(WeekdayItem(weekday: weekday, symbol: symbol, isWeekend: weekday == 1 || weekday == 7))
+        }
+        return result
+    }
+
+    private func moveMonth(_ offset: Int) {
+        guard let newMonth = calendar.date(byAdding: .month, value: offset, to: displayedMonth) else { return }
+
+        let normalizedNewMonth = monthStart(for: newMonth)
+        let keepsSelectedMonth = isDate(
+            selectedDate,
+            inDisplayedMonthsFrom: normalizedNewMonth
+        )
+
+        displayedMonth = normalizedNewMonth
+        if !keepsSelectedMonth {
+            selectedDate = preferredDate(in: normalizedNewMonth)
+        }
+    }
+
+    private func moveYear(_ offset: Int) {
+        guard let newMonth = calendar.date(byAdding: .year, value: offset, to: displayedMonth) else { return }
+
+        let normalizedNewMonth = monthStart(for: newMonth)
+        displayedMonth = normalizedNewMonth
+        selectedDate = preferredDate(in: normalizedNewMonth)
+    }
+
+    private func preferredDate(in month: Date) -> Date {
+        let dayCount = calendar.range(of: .day, in: .month, for: month)?.count ?? 28
+        let preferredDay = min(calendar.component(.day, from: selectedDate), dayCount)
+        var components = calendar.dateComponents([.year, .month], from: month)
+        components.day = preferredDay
+        return calendar.date(from: components) ?? month
+    }
+
+    private func openSettings() {
+        SettingsWindowManager.shared.show()
+    }
+
+    private func showToday() {
+        let today = Date()
+        let todayMonth = monthStart(for: today)
+        let isViewingTodayMonth = calendar.isDate(
+            displayedMonth,
+            equalTo: todayMonth,
+            toGranularity: .month
+        )
+
+        if !calendar.isDate(selectedDate, inSameDayAs: today) {
+            selectedDate = today
+        }
+
+        if !isViewingTodayMonth {
+            displayedMonth = todayMonth
+        }
+
+        Task {
+            await eventsModel.load(
+                for: today,
+                displayedMonth: todayMonth,
+                monthCount: monthCount
+            )
+        }
+    }
+
+    private func reloadEvents() {
+        Task {
+            await eventsModel.load(
+                for: selectedDate,
+                displayedMonth: displayedMonth,
+                monthCount: monthCount
+            )
+        }
+    }
+
+    private func monthStart(for date: Date) -> Date {
+        calendar.date(from: calendar.dateComponents([.year, .month], from: date)) ?? date
+    }
+
+    private func isDate(
+        _ date: Date,
+        inDisplayedMonthsFrom startMonth: Date
+    ) -> Bool {
+        for offset in 0..<monthCount {
+            guard let month = calendar.date(
+                byAdding: .month,
+                value: offset,
+                to: startMonth
+            ) else { continue }
+
+            if calendar.isDate(date, equalTo: month, toGranularity: .month) {
+                return true
+            }
+        }
+        return false
+    }
+}
+
+private struct WeekdayItem {
+    let weekday: Int
+    let symbol: String
+    let isWeekend: Bool
+}
+
+private struct EventRowView: View {
+    let event: CalendarEventItem
+
+    var body: some View {
+        Button {
+            CalendarOpener.open(event)
+        } label: {
+            HStack(spacing: 8) {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(event.color)
+                    .frame(width: 3, height: 26)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(event.title)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                    Text(timeText)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(.vertical, 2)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(L10n.text("Open in Calendar"))
+    }
+
+    private var timeText: String {
+        if event.isAllDay {
+            return L10n.text("All day")
+        }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter.string(from: event.startDate) + " – " + formatter.string(from: event.endDate)
+    }
+}

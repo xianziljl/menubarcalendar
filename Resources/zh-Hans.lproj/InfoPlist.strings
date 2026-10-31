@@ -1,0 +1,3 @@
+"CFBundleDisplayName" = "菜单栏日历";
+"NSCalendarsUsageDescription" = "需要访问日历以在菜单栏面板中显示选中日期的日程。";
+"NSCalendarsFullAccessUsageDescription" = "需要完整访问日历以显示选中日期的日程。";
