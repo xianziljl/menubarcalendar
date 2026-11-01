@@ -122,16 +122,29 @@ struct SettingsView: View {
 
     private var calendarPanelSection: some View {
         SettingsCard(title: L10n.text("Calendar Panel")) {
+            MenuRow(
+                label: L10n.text("Week starts on"),
+                selection: $firstWeekday,
+                options: [
+                    (1, L10n.text("Sunday")),
+                    (2, L10n.text("Monday")),
+                    (3, L10n.text("Tuesday")),
+                    (4, L10n.text("Wednesday")),
+                    (5, L10n.text("Thursday")),
+                    (6, L10n.text("Friday")),
+                    (7, L10n.text("Saturday"))
+                ]
+            )
+            RowDivider()
             SwitchRow(label: L10n.text("Show lunar"), isOn: $showLunar)
+            RowDivider()
+            SwitchRow(label: L10n.text("Show year switch buttons"), isOn: $showYearSwitchButtons)
             RowDivider()
             SwitchRow(
                 label: L10n.text("Show holiday and workday badges"),
                 hint: L10n.text("Holiday schedules are subject to official announcements."),
                 isOn: $showHolidayBadges
             )
-            RowDivider()
-            SwitchRow(label: L10n.text("Show year switch buttons"), isOn: $showYearSwitchButtons)
-
             RowDivider()
             SwitchRow(label: L10n.text("Dual Month Display"), isOn: isDualMonthBinding)
 
@@ -146,21 +159,6 @@ struct SettingsView: View {
                     ]
                 )
             }
-
-            RowDivider()
-            MenuRow(
-                label: L10n.text("Week starts on"),
-                selection: $firstWeekday,
-                options: [
-                    (1, L10n.text("Sunday")),
-                    (2, L10n.text("Monday")),
-                    (3, L10n.text("Tuesday")),
-                    (4, L10n.text("Wednesday")),
-                    (5, L10n.text("Thursday")),
-                    (6, L10n.text("Friday")),
-                    (7, L10n.text("Saturday"))
-                ]
-            )
         }
     }
 

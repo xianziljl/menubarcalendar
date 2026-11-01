@@ -68,7 +68,7 @@ cat > "${APP_DIR}/Contents/Info.plist" <<PLIST
     <key>CFBundleName</key>
     <string>MenuBarCalendar</string>
     <key>CFBundleDisplayName</key>
-    <string>菜单栏日历</string>
+    <string>Menubar Calendar</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
