@@ -39,6 +39,9 @@ rm -rf "$APP_DIR"
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
 cp "$BINARY_PATH" "$MACOS_DIR/$APP_NAME"
 
+# --- Strip symbols (release only; .build/ original stays intact) -------------------
+strip -x "${MACOS_DIR}/${APP_NAME}"
+
 # --- Icon (optional until provided) ------------------------------------------------
 if [[ -f "Resources/AppIcon.icns" ]]; then
   cp "Resources/AppIcon.icns" "${RESOURCES_DIR}/AppIcon.icns"
