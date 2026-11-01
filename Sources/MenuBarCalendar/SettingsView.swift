@@ -13,6 +13,9 @@ struct SettingsView: View {
     @AppStorage("showHolidayBadges")
     private var showHolidayBadges = L10n.isChinese
 
+    @AppStorage("showFestivals")
+    private var showFestivals = L10n.isChinese
+
     @AppStorage("firstWeekday")
     private var firstWeekday = 1
 
@@ -138,6 +141,13 @@ struct SettingsView: View {
             RowDivider()
             SwitchRow(label: L10n.text("Show lunar"), isOn: $showLunar)
             RowDivider()
+            if L10n.isChinese {
+                SwitchRow(
+                    label: L10n.text("Show festivals and solar terms"),
+                    isOn: $showFestivals
+                )
+                RowDivider()
+            }
             SwitchRow(label: L10n.text("Show year switch buttons"), isOn: $showYearSwitchButtons)
             RowDivider()
             SwitchRow(

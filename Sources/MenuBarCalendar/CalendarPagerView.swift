@@ -6,6 +6,7 @@ struct CalendarPagerView: View {
     let firstWeekday: Int
     let showLunar: Bool
     let showHolidayBadges: Bool
+    let showFestivals: Bool
     let eventDots: [Date: [Color]]
     let holidayInfo: [Date: HolidayInfo]
     let width: CGFloat
@@ -39,6 +40,7 @@ struct CalendarPagerView: View {
         firstWeekday: Int,
         showLunar: Bool,
         showHolidayBadges: Bool,
+        showFestivals: Bool,
         eventDots: [Date: [Color]],
         holidayInfo: [Date: HolidayInfo],
         width: CGFloat,
@@ -52,6 +54,7 @@ struct CalendarPagerView: View {
         self.firstWeekday = firstWeekday
         self.showLunar = showLunar
         self.showHolidayBadges = showHolidayBadges
+        self.showFestivals = showFestivals
         self.eventDots = eventDots
         self.holidayInfo = holidayInfo
         self.width = width
@@ -83,6 +86,7 @@ struct CalendarPagerView: View {
                 firstWeekday: firstWeekday,
                 showLunar: showLunar,
                 showHolidayBadges: showHolidayBadges,
+                showFestivals: showFestivals,
                 eventDots: eventDots,
                 holidayInfo: holidayInfo,
                 monthCount: monthCount,
@@ -102,6 +106,7 @@ struct CalendarPagerView: View {
                 firstWeekday: firstWeekday,
                 showLunar: showLunar,
                 showHolidayBadges: showHolidayBadges,
+                showFestivals: showFestivals,
                 eventDots: eventDots,
                 holidayInfo: holidayInfo,
                 monthCount: monthCount,
@@ -283,6 +288,7 @@ private struct CalendarMonthPageView: View {
     let firstWeekday: Int
     let showLunar: Bool
     let showHolidayBadges: Bool
+    let showFestivals: Bool
     let eventDots: [Date: [Color]]
     let holidayInfo: [Date: HolidayInfo]
     let monthCount: Int
@@ -304,6 +310,7 @@ private struct CalendarMonthPageView: View {
                     firstWeekday: firstWeekday,
                     showLunar: showLunar,
                     showHolidayBadges: showHolidayBadges,
+                    showFestivals: showFestivals,
                     eventDots: eventDots,
                     holidayInfo: holidayInfo
                 )
@@ -338,6 +345,7 @@ private struct CalendarMonthPageView: View {
             firstWeekday: firstWeekday,
             showLunar: showLunar,
             showHolidayBadges: showHolidayBadges,
+            showFestivals: showFestivals,
             eventDots: eventDots,
                 holidayInfo: holidayInfo,
                 showsAdjacentMonthDates: showsAdjacentMonthDates
@@ -354,6 +362,7 @@ private struct CalendarDualVerticalGridView: View {
     let firstWeekday: Int
     let showLunar: Bool
     let showHolidayBadges: Bool
+    let showFestivals: Bool
     let eventDots: [Date: [Color]]
     let holidayInfo: [Date: HolidayInfo]
 
@@ -373,6 +382,7 @@ private struct CalendarDualVerticalGridView: View {
                             selectedDate: selectedDate,
                             showLunar: showLunar,
                             showHolidayBadges: showHolidayBadges,
+                            showFestivals: showFestivals,
                             dotColors: eventDots[calendar.startOfDay(for: cellDate)] ?? [],
                             holidayInfo: holidayInfo[calendar.startOfDay(for: cellDate)]
                         ) {

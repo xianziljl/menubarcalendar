@@ -6,6 +6,7 @@ struct CalendarGridView: View {
     let firstWeekday: Int
     let showLunar: Bool
     let showHolidayBadges: Bool
+    let showFestivals: Bool
     let eventDots: [Date: [Color]]
     let holidayInfo: [Date: HolidayInfo]
     let showsAdjacentMonthDates: Bool
@@ -27,6 +28,7 @@ struct CalendarGridView: View {
                                 selectedDate: selectedDate,
                                 showLunar: showLunar,
                                 showHolidayBadges: showHolidayBadges,
+                                showFestivals: showFestivals,
                                 dotColors: eventDots[calendar.startOfDay(for: cellDate)] ?? [],
                                 holidayInfo: holidayInfo[calendar.startOfDay(for: cellDate)]
                             ) {
@@ -77,6 +79,7 @@ struct CalendarCellView: View {
     let selectedDate: Date
     let showLunar: Bool
     let showHolidayBadges: Bool
+    let showFestivals: Bool
     let dotColors: [Color]
     let holidayInfo: HolidayInfo?
     let selectDate: () -> Void
@@ -116,7 +119,7 @@ struct CalendarCellView: View {
                 if showLunar {
                     Text(lunarDay)
                         .font(.system(size: 8))
-                        .foregroundStyle(isSelected ? todayTextColor.opacity(0.86) : lunarTextColor)
+                        .foregroundStyle(lunarDayColor)
                         .lineLimit(1)
                         .minimumScaleFactor(0.75)
                 }
@@ -181,7 +184,47 @@ struct CalendarCellView: View {
     }
 
     private var lunarDay: String {
-        LunarDateFormatter.cellText(for: date)
+        if showFestivals, let info = FestivalModel.info(for: date) {
+            return info.text
+        }
+        return LunarDateFormatter.cellText(for: date)
+    }
+
+    private var specialDayInfo: FestivalInfo? {
+        guard showFestivals else { return nil }
+        return FestivalModel.info(for: date)
+    }
+
+    private var festivalColor: Color {
+        Color(nsColor: NSColor(name: nil, dynamicProvider: { appearance in
+            let isDark = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+            return isDark
+                ? NSColor(red: 1.0, green: 0.62, blue: 0.26, alpha: 1.0)
+                : NSColor(red: 0.85, green: 0.42, blue: 0.0, alpha: 1.0)
+        }))
+    }
+
+    private var solarTermColor: Color {
+        Color(nsColor: NSColor(name: nil, dynamicProvider: { appearance in
+            let isDark = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+            return isDark
+                ? NSColor(red: 0.58, green: 0.64, blue: 0.95, alpha: 1.0)
+                : NSColor(red: 0.28, green: 0.28, blue: 0.65, alpha: 1.0)
+        }))
+    }
+
+    private var lunarDayColor: Color {
+        if isToday || isSelected {
+            return .white.opacity(0.86)
+        }
+        if let info = specialDayInfo {
+            let base = info.kind == .festival ? festivalColor : solarTermColor
+            if !isCurrentMonth {
+                return base.opacity(0.3)
+            }
+            return base
+        }
+        return lunarTextColor
     }
 
     private var dayTextColor: Color {

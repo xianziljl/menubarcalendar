@@ -9,6 +9,9 @@ struct CalendarPanelView: View {
     @AppStorage("showHolidayBadges")
     private var showHolidayBadges = L10n.isChinese
 
+    @AppStorage("showFestivals")
+    private var showFestivals = L10n.isChinese
+
     @AppStorage("firstWeekday")
     private var firstWeekday = 1
 
@@ -242,6 +245,10 @@ struct CalendarPanelView: View {
 
             Toggle(L10n.text("Show lunar"), isOn: $showLunar)
 
+            if L10n.isChinese {
+                Toggle(L10n.text("Show festivals and solar terms"), isOn: $showFestivals)
+            }
+
             Divider()
 
             Button {
@@ -324,6 +331,7 @@ struct CalendarPanelView: View {
             firstWeekday: firstWeekday,
             showLunar: showLunar,
             showHolidayBadges: showHolidayBadges,
+            showFestivals: effectiveShowFestivals,
             eventDots: eventsModel.eventDots,
             holidayInfo: holidayModel.holidayInfo,
             width: calendarContentWidth,
@@ -334,6 +342,11 @@ struct CalendarPanelView: View {
         )
     }
 
+    private var effectiveShowFestivals: Bool {
+        if !L10n.isChinese { return true }
+        return showFestivals
+    }
+
     private var eventSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .center, spacing: 8) {
@@ -341,7 +354,7 @@ struct CalendarPanelView: View {
                     eventTitle
 
                     if showLunar {
-                        Text(LunarDateFormatter.monthAndDayText(for: selectedDate))
+                        Text(selectedDateSubtitle)
                             .font(.system(size: 13))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
@@ -437,6 +450,14 @@ struct CalendarPanelView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var selectedDateSubtitle: String {
+        let lunarText = LunarDateFormatter.monthAndDayText(for: selectedDate)
+        guard effectiveShowFestivals, let info = FestivalModel.info(for: selectedDate) else {
+            return lunarText
+        }
+        return "\(info.text) · \(lunarText)"
     }
 
     private var eventTitle: some View {
