@@ -146,7 +146,7 @@ struct MenuBarLabelView: View {
     }
 }
 
-private final class MenuBarClock: ObservableObject {
+private final class MenuBarClock: NSObject, ObservableObject {
     @Published private(set) var date = Date()
 
     private let calendar = Calendar.current
@@ -156,13 +156,35 @@ private final class MenuBarClock: ObservableObject {
     init(granularity: Granularity? = nil) {
         self.granularity = granularity
 
+        super.init()
         if granularity != nil {
             scheduleAlignedTimer()
         }
+
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(systemTimeContextDidChange),
+            name: NSWorkspace.didWakeNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(systemTimeContextDidChange),
+            name: NSNotification.Name.NSSystemClockDidChange,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(systemTimeContextDidChange),
+            name: NSNotification.Name.NSSystemTimeZoneDidChange,
+            object: nil
+        )
     }
 
     deinit {
         timer?.invalidate()
+        NotificationCenter.default.removeObserver(self)
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
     }
 
     enum Granularity {
@@ -213,6 +235,15 @@ private final class MenuBarClock: ObservableObject {
         case .minute: .minute
         case .hour: .hour
         case .day: .day
+        }
+    }
+
+    @objc private func systemTimeContextDidChange() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+
+            self.date = Date()
+            self.scheduleAlignedTimer()
         }
     }
 }
