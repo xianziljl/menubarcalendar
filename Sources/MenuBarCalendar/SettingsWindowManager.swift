@@ -22,7 +22,8 @@ final class SettingsWindowManager {
         window.styleMask = [.titled, .closable]
         window.title = L10n.text("Calendar Settings")
         window.isReleasedWhenClosed = false
-        window.setContentSize(NSSize(width: 380, height: hostingController.view.fittingSize.height))
+        window.backgroundColor = SettingsPalette.windowBackgroundNS
+        window.setContentSize(NSSize(width: 420, height: hostingController.view.fittingSize.height))
         window.center()
 
         let controller = NSWindowController(window: window)

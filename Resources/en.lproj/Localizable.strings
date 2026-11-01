@@ -1,7 +1,7 @@
 "Menu Bar Display" = "Menu Bar Display";
-"Content" = "Content";
+"Content" = "Menu Bar Display";
 "Date" = "Date";
-"Calendar Icon" = "Calendar Icon";
+"Calendar Icon" = "Icon";
 "Examples: yyyy-MM-dd EEE, M/d, HH:mm:ss" = "Examples: yyyy-MM-dd EEE, M/d, HH:mm:ss";
 "EEE/EEEE shows the weekday. HH:mm:ss shows seconds and updates every second." = "EEE/EEEE shows the weekday. HH:mm:ss shows seconds and updates every second.";
 "Calendar Panel" = "Calendar Panel";
@@ -48,3 +48,6 @@
 "Launch at login" = "Launch at login";
 "Approval is required in System Settings before it takes effect." = "Approval is required in System Settings before it takes effect.";
 "Launch at login requires macOS 13.0 or later." = "Launch at login requires macOS 13.0 or later.";
+"Version" = "Version";
+"Holiday schedules are subject to official announcements." = "Holiday schedules are subject to official announcements.";
+"Date format" = "Date Format";

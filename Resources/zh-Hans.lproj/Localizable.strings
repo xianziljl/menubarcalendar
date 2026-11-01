@@ -1,7 +1,7 @@
 "Menu Bar Display" = "菜单栏显示";
-"Content" = "内容";
+"Content" = "菜单栏显示";
 "Date" = "日期";
-"Calendar Icon" = "日历图标";
+"Calendar Icon" = "图标";
 "Examples: yyyy-MM-dd EEE, M/d, HH:mm:ss" = "示例：yyyy-MM-dd EEE、M/d、HH:mm:ss";
 "EEE/EEEE shows the weekday. HH:mm:ss shows seconds and updates every second." = "EEE/EEEE 显示周几；HH:mm:ss 显示秒数并每秒刷新。";
 "Calendar Panel" = "日历面板";
@@ -48,3 +48,6 @@
 "Launch at login" = "登录时启动";
 "Approval is required in System Settings before it takes effect." = "需要在系统设置中批准后才会生效。";
 "Launch at login requires macOS 13.0 or later." = "登录时启动需要 macOS 13.0 或更高版本。";
+"Version" = "版本";
+"Holiday schedules are subject to official announcements." = "节日安排以官方发布为准。";
+"Date format" = "日期格式";
