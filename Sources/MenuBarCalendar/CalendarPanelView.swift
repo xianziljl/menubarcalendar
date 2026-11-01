@@ -27,6 +27,9 @@ struct CalendarPanelView: View {
         from: Calendar.current.dateComponents([.year, .month], from: Date())
     ) ?? Date()
     @State private var selectedDate = Date()
+    @State private var showsNewEventPopover = false
+    @State private var selectedDetailEventID: String?
+    @State private var eventPresentationID = UUID()
 
     private let calendar = Calendar.current
     private let singlePanelWidth: CGFloat = 284
@@ -39,6 +42,10 @@ struct CalendarPanelView: View {
 
     private var dualMonthLayout: DualMonthLayout {
         DualMonthLayout(rawValue: dualMonthLayoutRaw) ?? .horizontal
+    }
+
+    private var isSelectedDateToday: Bool {
+        calendar.isDate(selectedDate, inSameDayAs: Date())
     }
 
     private var isCompactHeader: Bool {
@@ -94,6 +101,23 @@ struct CalendarPanelView: View {
         }
         .padding(14)
         .frame(width: panelWidth)
+        .background(PanelWindowIdentifierAccessor())
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { notification in
+            guard let window = notification.object as? NSWindow,
+                  window.identifier == Self.panelWindowIdentifier else {
+                return
+            }
+
+            eventPresentationID = UUID()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.willCloseNotification)) { notification in
+            guard let window = notification.object as? NSWindow,
+                  window.identifier == Self.panelWindowIdentifier else {
+                return
+            }
+
+            closeTransientPopovers()
+        }
         .task {
             selectedDate = Date()
             displayedMonth = monthStart(for: Date())
@@ -312,18 +336,45 @@ struct CalendarPanelView: View {
 
     private var eventSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text(dayTitle)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color.primary)
-                Spacer()
-                if showLunar {
-                    Text(LunarDateFormatter.monthAndDayText(for: selectedDate))
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
+            HStack(alignment: .center, spacing: 8) {
+                VStack(alignment: .leading, spacing: 2) {
+                    eventTitle
+
+                    if showLunar {
+                        Text(LunarDateFormatter.monthAndDayText(for: selectedDate))
+                            .font(.system(size: 13))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Spacer()
+
+                Button {
+                    showsNewEventPopover = true
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Color.primary)
+                        .frame(width: 20, height: 20)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help(L10n.text("Add Event"))
+            }
+            .popover(
+                isPresented: $showsNewEventPopover,
+                arrowEdge: .trailing
+            ) {
+                NewEventPopoverView(
+                    selectedDate: selectedDate,
+                    eventsModel: eventsModel,
+                    onCreated: {
+                        showsNewEventPopover = false
+                    }
+                )
             }
 
             if !eventsModel.hasAccess {
@@ -368,7 +419,19 @@ struct CalendarPanelView: View {
             } else {
                 VStack(alignment: .leading, spacing: 6) {
                     ForEach(eventsModel.items) { event in
-                        EventRowView(event: event)
+                        EventRowView(
+                            event: event,
+                            eventsModel: eventsModel,
+                            showsDetails: selectedDetailEventID == event.id,
+                            changeShowsDetails: { shows in
+                                if shows {
+                                    selectedDetailEventID = event.id
+                                } else if selectedDetailEventID == event.id {
+                                    selectedDetailEventID = nil
+                                }
+                            }
+                        )
+                            .id("\(event.id)-\(eventPresentationID)")
                     }
                 }
             }
@@ -376,10 +439,28 @@ struct CalendarPanelView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    private var eventTitle: some View {
+        HStack(spacing: 0) {
+            if isSelectedDateToday {
+                Text("\(L10n.text("Today")) ")
+                    .foregroundStyle(Color.accentColor)
+            }
+
+            Text(dayTitle)
+                .foregroundStyle(Color.primary)
+        }
+        .font(.system(size: 12.5, weight: .semibold))
+        .lineLimit(1)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     private var dayTitle: String {
         let formatter = DateFormatter()
-        formatter.dateFormat = L10n.isChinese ? "M月d日 EEEE" : "EEEE, MMM d"
-        return formatter.string(from: selectedDate)
+        formatter.setLocalizedDateFormatFromTemplate("MMMd")
+        let dateText = formatter.string(from: selectedDate)
+        let weekNumber = calendar.component(.weekOfYear, from: selectedDate)
+        let weekText = String(format: L10n.text("Week %d"), weekNumber)
+        return "\(dateText) · \(weekText)"
     }
 
     private var weekdays: [WeekdayItem] {
@@ -463,6 +544,30 @@ struct CalendarPanelView: View {
         }
     }
 
+    /// SwiftUI popover state can outlive a hidden MenuBarExtra window. Closing
+    /// the identified popover windows while the main panel is still closing
+    /// keeps the transient popover from appearing on the next panel open.
+    private func closeTransientPopovers() {
+        showsNewEventPopover = false
+        selectedDetailEventID = nil
+        eventPresentationID = UUID()
+
+        let popoverIdentifiers: Set<NSUserInterfaceItemIdentifier> = [
+            EventDetailPopoverView.popoverWindowIdentifier,
+            NewEventPopoverView.popoverWindowIdentifier
+        ]
+
+        for window in NSApp.windows {
+            guard window.isVisible,
+                  let identifier = window.identifier,
+                  popoverIdentifiers.contains(identifier) else {
+                continue
+            }
+
+            window.close()
+        }
+    }
+
     private func monthStart(for date: Date) -> Date {
         calendar.date(from: calendar.dateComponents([.year, .month], from: date)) ?? date
     }
@@ -486,6 +591,25 @@ struct CalendarPanelView: View {
     }
 }
 
+private extension CalendarPanelView {
+    static let panelWindowIdentifier = NSUserInterfaceItemIdentifier("MenuBarCalendarPanel")
+}
+
+private struct PanelWindowIdentifierAccessor: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        PanelIdentifierView()
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
+
+    private final class PanelIdentifierView: NSView {
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            window?.identifier = CalendarPanelView.panelWindowIdentifier
+        }
+    }
+}
+
 private struct WeekdayItem {
     let weekday: Int
     let symbol: String
@@ -494,10 +618,13 @@ private struct WeekdayItem {
 
 private struct EventRowView: View {
     let event: CalendarEventItem
+    let eventsModel: CalendarEventsModel
+    let showsDetails: Bool
+    let changeShowsDetails: (Bool) -> Void
 
     var body: some View {
         Button {
-            CalendarOpener.open(event)
+            changeShowsDetails(true)
         } label: {
             HStack(spacing: 8) {
                 RoundedRectangle(cornerRadius: 2)
@@ -521,7 +648,22 @@ private struct EventRowView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .help(L10n.text("Open in Calendar"))
+        .popover(
+            isPresented: Binding(
+                get: { showsDetails },
+                set: { changeShowsDetails($0) }
+            ),
+            arrowEdge: .trailing
+        ) {
+            EventDetailPopoverView(
+                event: event,
+                eventsModel: eventsModel,
+                onDeleted: {
+                    changeShowsDetails(false)
+                }
+            )
+        }
+        .help(L10n.text("View Details"))
     }
 
     private var timeText: String {

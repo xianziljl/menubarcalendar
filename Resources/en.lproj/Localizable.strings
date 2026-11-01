@@ -51,3 +51,60 @@
 "Version" = "Version";
 "Holiday schedules are subject to official announcements." = "Holiday schedules are subject to official announcements.";
 "Date format" = "Date Format";
+"Add Event" = "Add Event";
+"Week %d" = "Week %d";
+"Event Details" = "Event Details";
+"View Details" = "View Details";
+"Close" = "Close";
+"Edit" = "Edit";
+"Cancel" = "Cancel";
+"Save" = "Save";
+"Title" = "Title";
+"Location" = "Location";
+"Notes" = "Notes";
+"Calendar" = "Calendar";
+"Starts" = "Starts";
+"Ends" = "Ends";
+"Subscribed events cannot be edited." = "Subscribed events cannot be edited.";
+"Calendar access is required to edit events." = "Calendar access is required to edit events.";
+"This event is no longer available." = "This event is no longer available.";
+"Event changes could not be saved." = "Event changes could not be saved.";
+"Add Location" = "Add Location";
+"Add Notes" = "Add Notes";
+"Add URL" = "Add URL";
+"Start time" = "Start Time";
+"End time" = "End Time";
+"Time zone" = "Time Zone";
+"Repeat" = "Repeat";
+"Alert" = "Alert";
+"Never" = "Never";
+"Daily" = "Daily";
+"Weekly" = "Weekly";
+"Monthly" = "Monthly";
+"Yearly" = "Yearly";
+"Custom" = "Custom";
+"None" = "None";
+"At time of event" = "At time of event";
+"5 minutes before" = "5 minutes before";
+"15 minutes before" = "15 minutes before";
+"30 minutes before" = "30 minutes before";
+"1 hour before" = "1 hour before";
+"1 day before" = "1 day before";
+"The URL is invalid." = "The URL is invalid.";
+"Calendar Color" = "Calendar Color";
+"The selected calendar is invalid." = "The selected calendar is invalid.";
+
+
+"Delete" = "Delete";
+"Delete Event" = "Delete Event";
+"This action cannot be undone." = "This action cannot be undone.";
+
+"On" = "On";
+"Off" = "Off";
+
+"Delete This Event Only" = "Delete This Event Only";
+"Delete All Future Events" = "Delete All Future Events";
+
+"Add" = "Add";
+"New Event" = "New Event";
+"Personal" = "Personal";

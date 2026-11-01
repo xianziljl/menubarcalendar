@@ -51,3 +51,60 @@
 "Version" = "バージョン";
 "Holiday schedules are subject to official announcements." = "祝日の日程は公式発表に従います。";
 "Date format" = "日付形式";
+"Add Event" = "予定を追加";
+"Week %d" = "第%d週";
+"Event Details" = "予定の詳細";
+"View Details" = "詳細を表示";
+"Close" = "閉じる";
+"Edit" = "編集";
+"Cancel" = "キャンセル";
+"Save" = "保存";
+"Title" = "タイトル";
+"Location" = "場所";
+"Notes" = "メモ";
+"Calendar" = "カレンダー";
+"Starts" = "開始";
+"Ends" = "終了";
+"Subscribed events cannot be edited." = "購読カレンダーの予定は編集できません。";
+"Calendar access is required to edit events." = "予定を編集するにはカレンダーへのアクセスが必要です。";
+"This event is no longer available." = "この予定は利用できなくなりました。";
+"Event changes could not be saved." = "予定の変更を保存できませんでした。";
+"Add Location" = "場所を追加";
+"Add Notes" = "メモを追加";
+"Add URL" = "URLを追加";
+"Start time" = "開始時間";
+"End time" = "終了時間";
+"Time zone" = "タイムゾーン";
+"Repeat" = "繰り返し";
+"Alert" = "通知";
+"Never" = "なし";
+"Daily" = "毎日";
+"Weekly" = "毎週";
+"Monthly" = "毎月";
+"Yearly" = "毎年";
+"Custom" = "カスタム";
+"None" = "なし";
+"At time of event" = "開始時";
+"5 minutes before" = "5分前";
+"15 minutes before" = "15分前";
+"30 minutes before" = "30分前";
+"1 hour before" = "1時間前";
+"1 day before" = "1日前";
+"The URL is invalid." = "URLが無効です。";
+"Calendar Color" = "カレンダーのカラー";
+"The selected calendar is invalid." = "選択したカレンダーは無効です。";
+
+
+"Delete" = "削除";
+"Delete Event" = "イベントを削除";
+"This action cannot be undone." = "この操作は取り消せません。";
+
+"On" = "オン";
+"Off" = "オフ";
+
+"Delete This Event Only" = "このイベントのみ削除";
+"Delete All Future Events" = "今後のすべてのイベントを削除";
+
+"Add" = "追加";
+"New Event" = "新規予定";
+"Personal" = "個人";

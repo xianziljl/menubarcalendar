@@ -51,3 +51,60 @@
 "Version" = "版本";
 "Holiday schedules are subject to official announcements." = "节日安排以官方发布为准。";
 "Date format" = "日期格式";
+"Add Event" = "添加事项";
+"Week %d" = "第%d周";
+"Event Details" = "事项详情";
+"View Details" = "查看详情";
+"Close" = "关闭";
+"Edit" = "编辑";
+"Cancel" = "取消";
+"Save" = "保存";
+"Title" = "标题";
+"Location" = "地点";
+"Notes" = "备注";
+"Calendar" = "日历";
+"Starts" = "开始";
+"Ends" = "结束";
+"Subscribed events cannot be edited." = "订阅日历的事项无法编辑。";
+"Calendar access is required to edit events." = "需要日历权限才能编辑事项。";
+"This event is no longer available." = "该事项已不可用。";
+"Event changes could not be saved." = "事项修改无法保存。";
+"Add Location" = "添加位置";
+"Add Notes" = "添加备注";
+"Add URL" = "添加URL";
+"Start time" = "开始时间";
+"End time" = "结束时间";
+"Time zone" = "时区";
+"Repeat" = "重复";
+"Alert" = "提醒";
+"Never" = "永不";
+"Daily" = "每天";
+"Weekly" = "每周";
+"Monthly" = "每月";
+"Yearly" = "每年";
+"Custom" = "自定";
+"None" = "无";
+"At time of event" = "事项开始时";
+"5 minutes before" = "5分钟前";
+"15 minutes before" = "15分钟前";
+"30 minutes before" = "30分钟前";
+"1 hour before" = "1小时前";
+"1 day before" = "1天前";
+"The URL is invalid." = "URL无效。";
+"Calendar Color" = "日历颜色";
+"The selected calendar is invalid." = "所选日历无效。";
+
+
+"Delete" = "删除";
+"Delete Event" = "删除事项";
+"This action cannot be undone." = "此操作无法撤销。";
+
+"On" = "开";
+"Off" = "关";
+
+"Delete This Event Only" = "仅删除该日程";
+"Delete All Future Events" = "删除所有将来日程";
+
+"Add" = "添加";
+"New Event" = "新建日程";
+"Personal" = "个人";

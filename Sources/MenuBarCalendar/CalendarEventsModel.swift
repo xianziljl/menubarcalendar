@@ -7,8 +7,23 @@ struct CalendarEventItem: Identifiable, Equatable {
     let startDate: Date
     let endDate: Date
     let isAllDay: Bool
+    let location: String?
+    let notes: String?
     let calendarItemIdentifier: String
+    let calendarTitle: String
+    let calendarIdentifier: String
+    let isSubscribed: Bool
+    let timeZoneIdentifier: String
+    let recurrenceText: String
+    let recurrenceOptionRaw: String?
+    let alarmText: String
+    let alarmOptionRaw: String?
+    let urlText: String
     let color: Color
+
+    var canEdit: Bool {
+        !isSubscribed
+    }
 
     static func == (lhs: CalendarEventItem, rhs: CalendarEventItem) -> Bool {
         lhs.id == rhs.id
@@ -16,7 +31,18 @@ struct CalendarEventItem: Identifiable, Equatable {
             && lhs.startDate == rhs.startDate
             && lhs.endDate == rhs.endDate
             && lhs.isAllDay == rhs.isAllDay
+            && lhs.location == rhs.location
+            && lhs.notes == rhs.notes
             && lhs.calendarItemIdentifier == rhs.calendarItemIdentifier
+            && lhs.calendarTitle == rhs.calendarTitle
+            && lhs.calendarIdentifier == rhs.calendarIdentifier
+            && lhs.isSubscribed == rhs.isSubscribed
+            && lhs.timeZoneIdentifier == rhs.timeZoneIdentifier
+            && lhs.recurrenceText == rhs.recurrenceText
+            && lhs.recurrenceOptionRaw == rhs.recurrenceOptionRaw
+            && lhs.alarmText == rhs.alarmText
+            && lhs.alarmOptionRaw == rhs.alarmOptionRaw
+            && lhs.urlText == rhs.urlText
     }
 }
 
@@ -27,6 +53,20 @@ final class CalendarEventsModel: ObservableObject {
     @Published private(set) var isLoading = false
     @Published private(set) var items: [CalendarEventItem] = []
     @Published private(set) var eventDots: [Date: [Color]] = [:]
+
+    func availableCalendars(currentIdentifier: String) -> [EventCalendarOption] {
+        let allCalendars = eventStore.calendars(for: .event)
+        let editableCalendars = allCalendars.filter {
+            $0.allowsContentModifications && !$0.isSubscribed
+        }
+
+        if let currentCalendar = allCalendars.first(where: { $0.calendarIdentifier == currentIdentifier }),
+           !editableCalendars.contains(where: { $0.calendarIdentifier == currentIdentifier }) {
+            return EventCalendarOption.options(from: editableCalendars + [currentCalendar])
+        }
+
+        return EventCalendarOption.options(from: editableCalendars)
+    }
 
     private let eventStore = EKEventStore()
     private var notificationToken: NSObjectProtocol?
@@ -155,13 +195,27 @@ final class CalendarEventsModel: ObservableObject {
             return store.events(matching: predicate).map { event in
                 let calendarColor = event.calendar?.color ?? NSColor.systemBlue
                 let rgb = calendarColor.usingColorSpace(.sRGB)
+                let recurrenceRules = event.recurrenceRules ?? []
+                let recurrenceOption = eventRecurrenceOption(for: recurrenceRules)
+                let alarmOption = eventAlarmOption(for: event.alarms)
                 return DecodedEvent(
                     identifier: event.eventIdentifier ?? event.calendarItemIdentifier,
                     title: event.title ?? L10n.text("Untitled Event"),
                     startDate: event.startDate,
                     endDate: event.endDate,
                     isAllDay: event.isAllDay,
+                    location: event.location,
+                    notes: event.notes,
                     calendarItemIdentifier: event.calendarItemIdentifier,
+                    calendarTitle: event.calendar?.title ?? "",
+                    calendarIdentifier: event.calendar?.calendarIdentifier ?? "",
+                    isSubscribed: event.calendar?.isSubscribed ?? true,
+                    timeZoneIdentifier: event.timeZone?.identifier ?? TimeZone.current.identifier,
+                    recurrenceText: eventRecurrenceText(for: recurrenceRules),
+                    recurrenceOptionRaw: recurrenceOption?.rawValue,
+                    alarmText: eventAlarmText(for: event.alarms),
+                    alarmOptionRaw: alarmOption?.rawValue,
+                    urlText: event.url?.absoluteString ?? "",
                     red: rgb?.redComponent ?? 0.2,
                     green: rgb?.greenComponent ?? 0.45,
                     blue: rgb?.blueComponent ?? 0.9,
@@ -245,7 +299,18 @@ final class CalendarEventsModel: ObservableObject {
             startDate: event.startDate,
             endDate: event.endDate,
             isAllDay: event.isAllDay,
+            location: event.location,
+            notes: event.notes,
             calendarItemIdentifier: event.calendarItemIdentifier,
+            calendarTitle: event.calendarTitle,
+            calendarIdentifier: event.calendarIdentifier,
+            isSubscribed: event.isSubscribed,
+            timeZoneIdentifier: event.timeZoneIdentifier,
+            recurrenceText: event.recurrenceText,
+            recurrenceOptionRaw: event.recurrenceOptionRaw,
+            alarmText: event.alarmText,
+            alarmOptionRaw: event.alarmOptionRaw,
+            urlText: event.urlText,
             color: Color(
                 .sRGB,
                 red: event.red,
@@ -266,8 +331,14 @@ final class CalendarEventsModel: ObservableObject {
 
         for item in items {
             let eventStart = max(item.startDate, rangeStart)
-            let eventEnd = min(item.endDate, rangeEnd)
+            var eventEnd = min(item.endDate, rangeEnd)
             var day = calendar.startOfDay(for: eventStart)
+
+            // All-day end dates are inclusive in the Calendar UI, and EventKit may
+            // represent a single day with start == end. Ensure that day is included.
+            if item.isAllDay && eventEnd <= day {
+                eventEnd = calendar.date(byAdding: .day, value: 1, to: day) ?? eventEnd
+            }
 
             while day < rangeEnd && day < eventEnd {
                 groupedItems[day, default: []].append(item)
@@ -298,6 +369,296 @@ final class CalendarEventsModel: ObservableObject {
         let status = EKEventStore.authorizationStatus(for: .event)
         isDenied = status == .denied || status == .restricted
     }
+
+    /// A recurring series shares one EventKit identifier across occurrences.
+    /// Resolving by identifier alone can return the series anchor, so the exact
+    /// occurrence must be matched by its occurrence date before editing/deleting.
+    private func exactEvent(
+        for item: CalendarEventItem,
+        in store: EKEventStore
+    ) -> EKEvent? {
+        let directEvent = store.event(withIdentifier: item.id)
+            ?? (store.calendarItem(withIdentifier: item.calendarItemIdentifier) as? EKEvent)
+
+        if let directEvent, isSameOccurrence(directEvent, as: item) {
+            return directEvent
+        }
+
+        guard let seriesIdentifier = directEvent?.eventIdentifier ?? store.event(withIdentifier: item.id)?.eventIdentifier else {
+            return directEvent
+        }
+
+        let calendar = Calendar.current
+        let searchStart = calendar.date(byAdding: .day, value: -1, to: item.startDate) ?? item.startDate
+        let searchEnd = calendar.date(byAdding: .day, value: 1, to: item.endDate) ?? item.endDate
+        let predicate = store.predicateForEvents(
+            withStart: searchStart,
+            end: searchEnd,
+            calendars: nil
+        )
+
+        return store.events(matching: predicate).first { candidate in
+            candidate.eventIdentifier == seriesIdentifier
+                && candidate.calendarItemIdentifier == item.calendarItemIdentifier
+                && isSameOccurrence(candidate, as: item)
+        } ?? directEvent
+    }
+
+    private func isSameOccurrence(
+        _ event: EKEvent,
+        as item: CalendarEventItem
+    ) -> Bool {
+        event.isAllDay == item.isAllDay
+            && abs(event.occurrenceDate.timeIntervalSince(item.startDate)) < 1
+            && (event.endDate == item.endDate || event.isAllDay)
+    }
+
+    func updateEvent(
+        _ item: CalendarEventItem,
+        title: String,
+        location: String?,
+        notes: String?,
+        startDate: Date,
+        endDate: Date,
+        isAllDay: Bool,
+        recurrenceOption: EventRecurrenceOption,
+        reminderOption: EventReminderOption,
+        calendarIdentifier: String,
+        urlText: String
+    ) async throws {
+        guard hasAccess else {
+            throw CalendarEventUpdateError.accessDenied
+        }
+        guard item.canEdit else {
+            throw CalendarEventUpdateError.subscribedEvent
+        }
+
+        let event = exactEvent(for: item, in: eventStore)
+
+        guard let event else {
+            throw CalendarEventUpdateError.eventNotFound
+        }
+
+        guard let targetCalendar = eventStore.calendar(withIdentifier: calendarIdentifier),
+              targetCalendar.allowsContentModifications,
+              !targetCalendar.isSubscribed else {
+            throw CalendarEventUpdateError.invalidCalendar
+        }
+
+        let normalizedCalendar = Calendar.current
+        let normalizedStartDate: Date
+        let normalizedEndDate: Date
+
+        if isAllDay {
+            normalizedStartDate = normalizedCalendar.startOfDay(for: startDate)
+            // EventKit models a one-day all-day event with start/end on the same midnight.
+            // The calendar UI treats all-day end dates inclusively; adding one day here
+            // makes the event appear on the following day in Calendar.
+            normalizedEndDate = normalizedCalendar.startOfDay(for: max(endDate, normalizedStartDate))
+        } else {
+            normalizedStartDate = startDate
+            normalizedEndDate = max(
+                endDate,
+                startDate.addingTimeInterval(60)
+            )
+        }
+
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedLocation = location?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedNotes = notes?.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        event.title = trimmedTitle.isEmpty
+            ? L10n.text("Untitled Event")
+            : trimmedTitle
+        event.location = trimmedLocation?.isEmpty == true ? nil : trimmedLocation
+        event.notes = trimmedNotes?.isEmpty == true ? nil : trimmedNotes
+        event.isAllDay = isAllDay
+        event.startDate = normalizedStartDate
+        event.endDate = normalizedEndDate
+        event.calendar = targetCalendar
+
+        switch recurrenceOption {
+        case .custom:
+            break
+        case .never:
+            event.recurrenceRules = nil
+        case .daily:
+            event.recurrenceRules = [
+                EKRecurrenceRule(recurrenceWith: .daily, interval: 1, end: nil)
+            ]
+        case .weekly:
+            event.recurrenceRules = [
+                EKRecurrenceRule(recurrenceWith: .weekly, interval: 1, end: nil)
+            ]
+        case .monthly:
+            event.recurrenceRules = [
+                EKRecurrenceRule(recurrenceWith: .monthly, interval: 1, end: nil)
+            ]
+        case .yearly:
+            event.recurrenceRules = [
+                EKRecurrenceRule(recurrenceWith: .yearly, interval: 1, end: nil)
+            ]
+        }
+
+        switch reminderOption {
+        case .custom:
+            break
+        case .none:
+            event.alarms = nil
+        default:
+            if let offset = reminderOption.offset {
+                event.alarms = [EKAlarm(relativeOffset: offset)]
+            }
+        }
+
+        let trimmedURL = urlText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedURL.isEmpty {
+            event.url = nil
+        } else if let url = URL(string: trimmedURL) {
+            event.url = url
+        } else {
+            throw CalendarEventUpdateError.invalidURL
+        }
+
+        // item refers to the occurrence shown in the popover. Saving with this
+        // span turns a moved/changed series occurrence into an exception without
+        // touching occurrences before or after it.
+        try eventStore.save(event, span: .thisEvent, commit: true)
+
+        // Calendar moves and all-day changes should be reflected immediately, even when
+        // the EventKit change notification is delivered asynchronously.
+        await refreshLoadedEvents()
+    }
+
+    func createEvent(
+        title: String,
+        location: String?,
+        notes: String?,
+        startDate: Date,
+        endDate: Date,
+        isAllDay: Bool,
+        recurrenceOption: EventRecurrenceOption,
+        reminderOption: EventReminderOption,
+        calendarIdentifier: String,
+        urlText: String
+    ) async throws {
+        guard hasAccess else {
+            throw CalendarEventUpdateError.accessDenied
+        }
+
+        guard let targetCalendar = eventStore.calendar(withIdentifier: calendarIdentifier),
+              targetCalendar.allowsContentModifications,
+              !targetCalendar.isSubscribed else {
+            throw CalendarEventUpdateError.invalidCalendar
+        }
+
+        let normalizedCalendar = Calendar.current
+        let normalizedStartDate: Date
+        let normalizedEndDate: Date
+
+        if isAllDay {
+            normalizedStartDate = normalizedCalendar.startOfDay(for: startDate)
+            normalizedEndDate = normalizedCalendar.startOfDay(for: max(endDate, normalizedStartDate))
+        } else {
+            normalizedStartDate = startDate
+            normalizedEndDate = max(endDate, startDate.addingTimeInterval(60))
+        }
+
+        let event = EKEvent(eventStore: eventStore)
+        event.calendar = targetCalendar
+        event.title = title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? L10n.text("New Event")
+            : title.trimmingCharacters(in: .whitespacesAndNewlines)
+        event.location = location?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == true
+            ? nil
+            : location?.trimmingCharacters(in: .whitespacesAndNewlines)
+        event.notes = notes?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == true
+            ? nil
+            : notes?.trimmingCharacters(in: .whitespacesAndNewlines)
+        event.isAllDay = isAllDay
+        event.startDate = normalizedStartDate
+        event.endDate = normalizedEndDate
+
+        switch recurrenceOption {
+        case .never:
+            event.recurrenceRules = nil
+        case .daily:
+            event.recurrenceRules = [
+                EKRecurrenceRule(recurrenceWith: .daily, interval: 1, end: nil)
+            ]
+        case .weekly:
+            event.recurrenceRules = [
+                EKRecurrenceRule(recurrenceWith: .weekly, interval: 1, end: nil)
+            ]
+        case .monthly:
+            event.recurrenceRules = [
+                EKRecurrenceRule(recurrenceWith: .monthly, interval: 1, end: nil)
+            ]
+        case .yearly:
+            event.recurrenceRules = [
+                EKRecurrenceRule(recurrenceWith: .yearly, interval: 1, end: nil)
+            ]
+        case .custom:
+            break
+        }
+
+        switch reminderOption {
+        case .none:
+            event.alarms = nil
+        default:
+            if let offset = reminderOption.offset {
+                event.alarms = [EKAlarm(relativeOffset: offset)]
+            }
+        }
+
+        let trimmedURL = urlText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedURL.isEmpty {
+            event.url = nil
+        } else if let url = URL(string: trimmedURL) {
+            event.url = url
+        } else {
+            throw CalendarEventUpdateError.invalidURL
+        }
+
+        try eventStore.save(event, span: .thisEvent, commit: true)
+        await refreshLoadedEvents()
+    }
+
+    func deleteEvent(
+        _ item: CalendarEventItem,
+        scope: EventDeleteScope
+    ) async throws {
+        guard hasAccess else {
+            throw CalendarEventUpdateError.accessDenied
+        }
+        guard item.canEdit else {
+            throw CalendarEventUpdateError.subscribedEvent
+        }
+
+        guard let event = exactEvent(for: item, in: eventStore) else {
+            throw CalendarEventUpdateError.eventNotFound
+        }
+
+        let hasRecurrenceRules = item.recurrenceOptionRaw != EventRecurrenceOption.never.rawValue
+            || event.recurrenceRules?.isEmpty == false
+        let eventKitSpan: EKSpan = scope == .allFutureEvents && hasRecurrenceRules
+            ? .futureEvents
+            : .thisEvent
+        try eventStore.remove(event, span: eventKitSpan, commit: true)
+        await refreshLoadedEvents()
+    }
+
+
+    func refreshLoadedEvents() async {
+        guard let date = loadedDate else { return }
+
+        await load(
+            for: date,
+            displayedMonth: loadedDisplayedMonth,
+            monthCount: loadedMonthCount,
+            isAutomaticRefresh: true
+        )
+    }
 }
 
 private struct DecodedEvent: Sendable {
@@ -306,9 +667,159 @@ private struct DecodedEvent: Sendable {
     let startDate: Date
     let endDate: Date
     let isAllDay: Bool
+    let location: String?
+    let notes: String?
     let calendarItemIdentifier: String
+    let calendarTitle: String
+    let calendarIdentifier: String
+    let isSubscribed: Bool
+    let timeZoneIdentifier: String
+    let recurrenceText: String
+    let recurrenceOptionRaw: String?
+    let alarmText: String
+    let alarmOptionRaw: String?
+    let urlText: String
     let red: CGFloat
     let green: CGFloat
     let blue: CGFloat
     let alpha: CGFloat
+}
+
+enum EventDeleteScope {
+    case thisEvent
+    case allFutureEvents
+}
+
+enum CalendarEventUpdateError: LocalizedError {
+    case accessDenied
+    case subscribedEvent
+    case eventNotFound
+    case saveFailed
+    case invalidURL
+    case invalidCalendar
+
+    var errorDescription: String? {
+        switch self {
+        case .accessDenied:
+            return L10n.text("Calendar access is required to edit events.")
+        case .subscribedEvent:
+            return L10n.text("Subscribed events cannot be edited.")
+        case .eventNotFound:
+            return L10n.text("This event is no longer available.")
+        case .saveFailed:
+            return L10n.text("Event changes could not be saved.")
+        case .invalidURL:
+            return L10n.text("The URL is invalid.")
+        case .invalidCalendar:
+            return L10n.text("The selected calendar is invalid.")
+        }
+    }
+}
+
+struct EventCalendarOption: Identifiable, Equatable {
+    let id: String
+    let title: String
+    let color: Color
+
+    static func options(from calendars: [EKCalendar]) -> [EventCalendarOption] {
+        calendars.map { calendar in
+            EventCalendarOption(
+                id: calendar.calendarIdentifier,
+                title: calendar.title,
+                color: Color(nsColor: calendar.color)
+            )
+        }
+        .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+    }
+}
+
+enum EventRecurrenceOption: String, CaseIterable, Identifiable {
+    case never
+    case daily
+    case weekly
+    case monthly
+    case yearly
+    case custom
+
+    var id: String { rawValue }
+
+    var displayText: String {
+        switch self {
+        case .never: return L10n.text("Never")
+        case .daily: return L10n.text("Daily")
+        case .weekly: return L10n.text("Weekly")
+        case .monthly: return L10n.text("Monthly")
+        case .yearly: return L10n.text("Yearly")
+        case .custom: return L10n.text("Custom")
+        }
+    }
+}
+
+enum EventReminderOption: String, CaseIterable, Identifiable {
+    case none
+    case atTime
+    case minutes5
+    case minutes15
+    case minutes30
+    case hour1
+    case day1
+    case custom
+
+    var id: String { rawValue }
+
+    var offset: TimeInterval? {
+        switch self {
+        case .none, .custom: return nil
+        case .atTime: return 0
+        case .minutes5: return -5 * 60
+        case .minutes15: return -15 * 60
+        case .minutes30: return -30 * 60
+        case .hour1: return -60 * 60
+        case .day1: return -24 * 60 * 60
+        }
+    }
+
+    var displayText: String {
+        switch self {
+        case .none: return L10n.text("None")
+        case .atTime: return L10n.text("At time of event")
+        case .minutes5: return L10n.text("5 minutes before")
+        case .minutes15: return L10n.text("15 minutes before")
+        case .minutes30: return L10n.text("30 minutes before")
+        case .hour1: return L10n.text("1 hour before")
+        case .day1: return L10n.text("1 day before")
+        case .custom: return L10n.text("Custom")
+        }
+    }
+}
+
+private func eventRecurrenceOption(for rules: [EKRecurrenceRule]) -> EventRecurrenceOption? {
+    guard rules.count == 1, let rule = rules.first, rule.interval == 1, rule.recurrenceEnd == nil else {
+        return rules.isEmpty ? .never : .custom
+    }
+
+    switch rule.frequency {
+    case .daily: return .daily
+    case .weekly: return .weekly
+    case .monthly: return .monthly
+    case .yearly: return .yearly
+    @unknown default: return .custom
+    }
+}
+
+private func eventRecurrenceText(for rules: [EKRecurrenceRule]) -> String {
+    eventRecurrenceOption(for: rules)?.displayText ?? EventRecurrenceOption.custom.displayText
+}
+
+private func eventAlarmOption(for alarms: [EKAlarm]?) -> EventReminderOption? {
+    guard let alarms, !alarms.isEmpty else { return EventReminderOption.none }
+    guard alarms.count == 1, let alarm = alarms.first, alarm.absoluteDate == nil else {
+        return .custom
+    }
+
+    return EventReminderOption.allCases.first { $0.offset == alarm.relativeOffset } ?? .custom
+}
+
+private func eventAlarmText(for alarms: [EKAlarm]?) -> String {
+    eventAlarmOption(for: alarms)?.displayText ?? EventReminderOption.custom.displayText
 }
