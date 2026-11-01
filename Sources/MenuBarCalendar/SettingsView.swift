@@ -46,7 +46,6 @@ struct SettingsView: View {
         }
         .padding(20)
         .frame(width: 420, alignment: .leading)
-        .background(SettingsPalette.windowBackground)
     }
 
     // MARK: - Sections
@@ -166,32 +165,11 @@ struct SettingsView: View {
     }
 
     private var versionFooter: some View {
-        VStack(spacing: 3) {
-            Text(appDisplayName)
-                .font(.footnote.weight(.medium))
-                .foregroundStyle(.secondary)
-            Text("\(L10n.text("Version")) \(appVersion) (\(appBuild))")
-                .font(.caption2)
-                .foregroundStyle(Color(nsColor: .tertiaryLabelColor))
-        }
+        Text("\(L10n.text("Version")) \(AppInfo.version) (\(AppInfo.build))")
+            .font(.caption2)
+            .foregroundStyle(Color(nsColor: .tertiaryLabelColor))
         .frame(maxWidth: .infinity)
         .padding(.top, 2)
-    }
-
-    // MARK: - Version info
-
-    private var appDisplayName: String {
-        (Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String)
-            ?? (Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String)
-            ?? "MenuBarCalendar"
-    }
-
-    private var appVersion: String {
-        (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "1.0.0"
-    }
-
-    private var appBuild: String {
-        (Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String) ?? "1"
     }
 }
 
@@ -226,20 +204,11 @@ private struct SettingsCard<Content: View>: View {
 
 /// iOS Settings-style grouped background palette that adapts to light/dark appearance.
 enum SettingsPalette {
-    static let windowBackgroundNS: NSColor = NSColor(name: nil) { appearance in
-        isDarkAppearance(appearance)
-            ? NSColor(calibratedWhite: 0.118, alpha: 1)    // macOS System Settings dark background (#1E1E1E)
-            : NSColor.white                                 // light window background (white)
-    }
-
     static let cardBackgroundNS: NSColor = NSColor(name: nil) { appearance in
         isDarkAppearance(appearance)
-            ? NSColor(calibratedWhite: 0.157, alpha: 1)    // macOS System Settings dark card (~#282828)
-            : NSColor(calibratedWhite: 0.966, alpha: 1)    // light card (#F6F6F6)
-    }
-
-    static var windowBackground: Color {
-        Color(nsColor: windowBackgroundNS)
+            // Translucent overlays adapt to any window background:
+            ? NSColor.white.withAlphaComponent(0.04)       // dark: subtle white lift
+            : NSColor.black.withAlphaComponent(0.035)      // light: subtle gray tint
     }
 
     static var cardBackground: Color {
@@ -248,6 +217,23 @@ enum SettingsPalette {
 
     private static func isDarkAppearance(_ appearance: NSAppearance) -> Bool {
         appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+    }
+}
+
+/// Shared app metadata read from the bundle's Info.plist.
+enum AppInfo {
+    static var displayName: String {
+        (Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String)
+            ?? (Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String)
+            ?? "MenuBarCalendar"
+    }
+
+    static var version: String {
+        (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "1.0.0"
+    }
+
+    static var build: String {
+        (Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String) ?? "1"
     }
 }
 
