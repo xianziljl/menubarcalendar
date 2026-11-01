@@ -89,7 +89,9 @@ struct CalendarPagerView: View {
                 isVertical: isVerticalDualLayout,
                 monthWidth: monthWidth,
                 monthSpacing: dualMonthSpacing,
-                showsAdjacentMonthDates: showsAdjacentMonthDates
+                showsAdjacentMonthDates: showsAdjacentMonthDates,
+                hidesLeadingMonth: false,
+                hidesTrailingMonth: false
             )
             .offset(x: sourceOffset(for: contentWidth))
             .allowsHitTesting(displayedProgress < 0.5)
@@ -106,7 +108,9 @@ struct CalendarPagerView: View {
                 isVertical: isVerticalDualLayout,
                 monthWidth: monthWidth,
                 monthSpacing: dualMonthSpacing,
-                showsAdjacentMonthDates: showsAdjacentMonthDates
+                showsAdjacentMonthDates: showsAdjacentMonthDates,
+                hidesLeadingMonth: targetHidesLeadingMonth,
+                hidesTrailingMonth: targetHidesTrailingMonth
             )
             .offset(x: targetOffset(for: contentWidth))
             .allowsHitTesting(displayedProgress >= 0.5)
@@ -164,6 +168,20 @@ struct CalendarPagerView: View {
 
         let monthWidth = max(1, (contentWidth - dualMonthSpacing) / 2)
         return monthWidth + dualMonthSpacing
+    }
+
+    private var targetHidesLeadingMonth: Bool {
+        isAnimating
+            && monthCount == 2
+            && !isVerticalDualLayout
+            && slideDirection == .forward
+    }
+
+    private var targetHidesTrailingMonth: Bool {
+        isAnimating
+            && monthCount == 2
+            && !isVerticalDualLayout
+            && slideDirection == .backward
     }
 
     private func handleMonthChange(to newMonth: Date) {
@@ -272,6 +290,8 @@ private struct CalendarMonthPageView: View {
     let monthWidth: CGFloat
     let monthSpacing: CGFloat
     let showsAdjacentMonthDates: Bool
+    let hidesLeadingMonth: Bool
+    let hidesTrailingMonth: Bool
 
     private let calendar = Calendar.current
 
@@ -290,8 +310,8 @@ private struct CalendarMonthPageView: View {
                 .frame(width: monthWidth)
             } else if monthCount == 2 {
                 HStack(spacing: monthSpacing) {
-                    monthView(startMonth)
-                    monthView(nextMonth)
+                    monthView(startMonth, isHidden: hidesLeadingMonth)
+                    monthView(nextMonth, isHidden: hidesTrailingMonth)
                 }
             } else {
                 monthView(startMonth)
@@ -311,7 +331,7 @@ private struct CalendarMonthPageView: View {
         return monthWidth
     }
 
-    private func monthView(_ month: Date) -> some View {
+    private func monthView(_ month: Date, isHidden: Bool = false) -> some View {
         CalendarGridView(
             month: month,
             selectedDate: $selectedDate,
@@ -323,6 +343,8 @@ private struct CalendarMonthPageView: View {
                 showsAdjacentMonthDates: showsAdjacentMonthDates
         )
         .frame(width: monthWidth)
+        .opacity(isHidden ? 0 : 1)
+        .allowsHitTesting(!isHidden)
     }
 }
 
