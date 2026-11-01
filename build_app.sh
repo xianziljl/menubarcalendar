@@ -58,6 +58,8 @@ cat > "${APP_DIR}/Contents/Info.plist" <<PLIST
     <array>
         <string>en</string>
         <string>zh-Hans</string>
+        <string>zh-Hant</string>
+        <string>ja</string>
     </array>
     <key>CFBundleExecutable</key>
     <string>MenuBarCalendar</string>
@@ -99,6 +101,8 @@ printf 'APPL????\n' > "${APP_DIR}/Contents/PkgInfo"
 
 ditto "Resources/en.lproj" "${RESOURCES_DIR}/en.lproj"
 ditto "Resources/zh-Hans.lproj" "${RESOURCES_DIR}/zh-Hans.lproj"
+ditto "Resources/zh-Hant.lproj" "${RESOURCES_DIR}/zh-Hant.lproj"
+ditto "Resources/ja.lproj" "${RESOURCES_DIR}/ja.lproj"
 
 # --- Codesign ----------------------------------------------------------------------
 if [[ "$SIGN_IDENTITY" == "-" ]]; then

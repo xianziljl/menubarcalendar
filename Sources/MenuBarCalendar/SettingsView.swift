@@ -221,7 +221,11 @@ enum SettingsPalette {
 /// Shared app metadata read from the bundle's Info.plist.
 enum AppInfo {
     static var displayName: String {
-        (Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String)
+        let localized = Bundle.main.localizedString(forKey: "CFBundleDisplayName", value: nil, table: "InfoPlist")
+        if localized != "CFBundleDisplayName" {
+            return localized
+        }
+        return (Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String)
             ?? (Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String)
             ?? "MenuBarCalendar"
     }
