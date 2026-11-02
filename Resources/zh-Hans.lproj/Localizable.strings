@@ -109,3 +109,14 @@
 "New Event" = "新建日程";
 "Personal" = "个人";
 "Show festivals and solar terms" = "显示节日和节气";
+
+"In progress" = "进行中";
+"%d minutes later" = "%d分钟后";
+"%d hours later" = "%d小时后";
+"%d hours %d minutes later" = "%d小时%d分钟后";
+"Ended" = "已结束";
+"%d minutes until end" = "%d分钟后结束";
+"%d hours until end" = "%d小时后结束";
+"%d days until end" = "%d天后结束";
+"%d hours %d minutes until end" = "%d小时%d分钟后结束";
+"%d days %d hours until end" = "%d天%d小时后结束";

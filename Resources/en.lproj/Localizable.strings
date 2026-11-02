@@ -109,3 +109,14 @@
 "New Event" = "New Event";
 "Personal" = "Personal";
 "Show festivals and solar terms" = "Show festivals and solar terms";
+
+"In progress" = "In progress";
+"%d minutes later" = "%d minutes later";
+"%d hours later" = "%d hours later";
+"%d hours %d minutes later" = "%d hours %d minutes later";
+"Ended" = "Ended";
+"%d minutes until end" = "%d minutes until end";
+"%d hours until end" = "%d hours until end";
+"%d days until end" = "%d days until end";
+"%d hours %d minutes until end" = "%d hours %d minutes until end";
+"%d days %d hours until end" = "%d days %d hours until end";

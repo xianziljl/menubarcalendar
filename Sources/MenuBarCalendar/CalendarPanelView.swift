@@ -179,6 +179,7 @@ struct CalendarPanelView: View {
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .hoverHighlight()
                     .help(L10n.text("Previous Year"))
                 }
 
@@ -192,6 +193,7 @@ struct CalendarPanelView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .hoverHighlight()
                     .help(L10n.text("Previous Month"))
 
                     Button {
@@ -203,6 +205,7 @@ struct CalendarPanelView: View {
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .hoverHighlight()
                     .help(L10n.text("Today"))
 
                     Button {
@@ -214,6 +217,7 @@ struct CalendarPanelView: View {
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .hoverHighlight()
                     .help(L10n.text("Next Month"))
                 }
 
@@ -227,6 +231,7 @@ struct CalendarPanelView: View {
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .hoverHighlight()
                     .help(L10n.text("Next Year"))
                 }
 
@@ -276,6 +281,7 @@ struct CalendarPanelView: View {
                     .foregroundStyle(.primary)
                 .frame(width: optionsMenuWidth, height: optionsMenuHeight)
                 .contentShape(Rectangle())
+                .hoverHighlight()
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
@@ -375,6 +381,7 @@ struct CalendarPanelView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .hoverHighlight(cornerRadius: 6)
                 .help(L10n.text("Add Event"))
             }
             .popover(
@@ -430,26 +437,47 @@ struct CalendarPanelView: View {
                     .foregroundStyle(.secondary)
                     .padding(.vertical, 4)
             } else {
-                VStack(alignment: .leading, spacing: 6) {
-                    ForEach(eventsModel.items) { event in
-                        EventRowView(
-                            event: event,
-                            eventsModel: eventsModel,
-                            showsDetails: selectedDetailEventID == event.id,
-                            changeShowsDetails: { shows in
-                                if shows {
-                                    selectedDetailEventID = event.id
-                                } else if selectedDetailEventID == event.id {
-                                    selectedDetailEventID = nil
+                TimelineView(.periodic(from: .now, by: 15)) { context in
+                    LazyVGrid(
+                        columns: eventListColumns,
+                        alignment: .leading,
+                        spacing: 6
+                    ) {
+                        ForEach(eventsModel.items) { event in
+                            EventRowView(
+                                event: event,
+                                eventsModel: eventsModel,
+                                currentDate: context.date,
+                                showsDetails: selectedDetailEventID == event.id,
+                                changeShowsDetails: { shows in
+                                    if shows {
+                                        selectedDetailEventID = event.id
+                                    } else if selectedDetailEventID == event.id {
+                                        selectedDetailEventID = nil
+                                    }
                                 }
-                            }
-                        )
-                            .id("\(event.id)-\(eventPresentationID)")
+                            )
+                                .id("\(event.id)-\(eventPresentationID)")
+                        }
                     }
                 }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var eventListColumns: [GridItem] {
+        let isHorizontalDualMonth = monthDisplayMode == .dual
+            && dualMonthLayout == .horizontal
+
+        if isHorizontalDualMonth {
+            return [
+                GridItem(.flexible(), spacing: 16),
+                GridItem(.flexible())
+            ]
+        }
+
+        return [GridItem(.flexible())]
     }
 
     private var selectedDateSubtitle: String {
@@ -637,11 +665,37 @@ private struct WeekdayItem {
     let isWeekend: Bool
 }
 
+private struct HoverHighlightModifier: ViewModifier {
+    var cornerRadius: CGFloat = 5
+
+    @State private var isHovered = false
+
+    func body(content: Content) -> some View {
+        content
+            .background(
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(Color.primary.opacity(isHovered ? 0.08 : 0))
+            )
+            .onHover { hovering in
+                isHovered = hovering
+            }
+    }
+}
+
+private extension View {
+    func hoverHighlight(cornerRadius: CGFloat = 5) -> some View {
+        modifier(HoverHighlightModifier(cornerRadius: cornerRadius))
+    }
+}
+
 private struct EventRowView: View {
     let event: CalendarEventItem
     let eventsModel: CalendarEventsModel
+    let currentDate: Date
     let showsDetails: Bool
     let changeShowsDetails: (Bool) -> Void
+
+    @State private var isHovered = false
 
     var body: some View {
         Button {
@@ -664,11 +718,41 @@ private struct EventRowView: View {
                 }
 
                 Spacer(minLength: 0)
+
+                if let status = statusText {
+                    VStack(alignment: .trailing, spacing: 1) {
+                        Text(status)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(isInProgress ? Color.green : Color.primary)
+                            .monospacedDigit()
+                            .lineLimit(1)
+
+                        if isInProgress {
+                            Text(endsInText)
+                                .font(.system(size: 9))
+                                .foregroundStyle(Color.primary.opacity(0.55))
+                                .monospacedDigit()
+                                .lineLimit(1)
+                        }
+                    }
+                    .padding(.leading, 4)
+                }
             }
+            .opacity(isExpired ? 0.45 : 1)
             .padding(.vertical, 2)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(Color.primary.opacity(isHovered || showsDetails ? 0.08 : 0))
+                    .padding(.horizontal, -5)
+                    .padding(.vertical, -2)
+            )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .onHover { hovering in
+            isHovered = hovering
+        }
+        .contentShape(RoundedRectangle(cornerRadius: 6).inset(by: -2))
         .popover(
             isPresented: Binding(
                 get: { showsDetails },
@@ -695,5 +779,82 @@ private struct EventRowView: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
         return formatter.string(from: event.startDate) + " – " + formatter.string(from: event.endDate)
+    }
+
+    private var isInProgress: Bool {
+        event.startDate <= currentDate && currentDate < event.endDate
+    }
+
+    private var isExpired: Bool {
+        currentDate >= event.endDate
+    }
+
+    private var endsInText: String {
+        let endInterval = event.endDate.timeIntervalSince(currentDate)
+        guard endInterval > 0 else {
+            return L10n.text("Ended")
+        }
+
+        // 剩余时间按分钟展示，最后不足一分钟也显示为 1 分钟。
+        let totalMinutes = Int((endInterval / 60).rounded(.up))
+
+        if totalMinutes >= 24 * 60 {
+            let totalHours = totalMinutes / 60
+            let days = totalHours / 24
+            let hours = totalHours % 24
+
+            if hours > 0 {
+                return String(
+                    format: L10n.text("%d days %d hours until end"),
+                    days,
+                    hours
+                )
+            }
+            return String(format: L10n.text("%d days until end"), days)
+        }
+
+        let hours = totalMinutes / 60
+        let minutes = totalMinutes % 60
+
+        if hours > 0, minutes > 0 {
+            return String(
+                format: L10n.text("%d hours %d minutes until end"),
+                hours,
+                minutes
+            )
+        }
+        if hours > 0 {
+            return String(format: L10n.text("%d hours until end"), hours)
+        }
+        return String(format: L10n.text("%d minutes until end"), totalMinutes)
+    }
+
+    private var statusText: String? {
+        if isInProgress {
+            return L10n.text("In progress")
+        }
+
+        let startInterval = event.startDate.timeIntervalSince(currentDate)
+        guard startInterval > 0,
+              startInterval <= 12 * 60 * 60 else {
+            return nil
+        }
+
+        // 开始前的最后不足一分钟也按 1 分钟展示。
+        let totalMinutes = Int(startInterval / 60 + 0.99)
+        let hours = totalMinutes / 60
+        let minutes = totalMinutes % 60
+
+        if hours > 0, minutes > 0 {
+            return String(
+                format: L10n.text("%d hours %d minutes later"),
+                hours,
+                minutes
+            )
+        }
+        if hours > 0 {
+            return String(format: L10n.text("%d hours later"), hours)
+        }
+        return String(format: L10n.text("%d minutes later"), totalMinutes)
     }
 }

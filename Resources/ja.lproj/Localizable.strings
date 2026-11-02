@@ -109,3 +109,14 @@
 "New Event" = "新規予定";
 "Personal" = "個人";
 "Show festivals and solar terms" = "祭日と節気を表示";
+
+"In progress" = "進行中";
+"%d minutes later" = "%d分後";
+"%d hours later" = "%d時間後";
+"%d hours %d minutes later" = "%d時間%d分後";
+"Ended" = "終了済み";
+"%d minutes until end" = "%d分後に終了";
+"%d hours until end" = "%d時間後に終了";
+"%d days until end" = "%d日後に終了";
+"%d hours %d minutes until end" = "%d時間%d分後に終了";
+"%d days %d hours until end" = "%d日%d時間後に終了";

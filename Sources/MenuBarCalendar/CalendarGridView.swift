@@ -84,6 +84,8 @@ struct CalendarCellView: View {
     let holidayInfo: HolidayInfo?
     let selectDate: () -> Void
 
+    @State private var isHovered = false
+
     private var accentColor: Color {
         Color(nsColor: .controlAccentColor)
     }
@@ -138,6 +140,9 @@ struct CalendarCellView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .onHover { hovering in
+            isHovered = hovering
+        }
         .help(holidayHelpText ?? "")
         .padding(.horizontal, 1)
         .padding(.vertical, 1)
@@ -275,11 +280,15 @@ struct CalendarCellView: View {
                 .frame(width: highlightDiameter, height: highlightDiameter)
         } else if isToday {
             Circle()
-                .fill(Color.primary.opacity(0.08))
+                .fill(Color.primary.opacity(isHovered ? 0.16 : 0.08))
                 .overlay(
                     Circle()
                         .strokeBorder(accentColor, lineWidth: 1.5)
                 )
+                .frame(width: highlightDiameter, height: highlightDiameter)
+        } else if isHovered {
+            Circle()
+                .fill(Color.primary.opacity(0.08))
                 .frame(width: highlightDiameter, height: highlightDiameter)
         }
     }
