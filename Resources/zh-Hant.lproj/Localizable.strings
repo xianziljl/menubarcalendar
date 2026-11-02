@@ -120,3 +120,13 @@
 "%d days until end" = "%d天後結束";
 "%d hours %d minutes until end" = "%d小時%d分鐘後結束";
 "%d days %d hours until end" = "%d天%d小時後結束";
+
+"%d minutes" = "%d分鐘";
+"%d hours" = "%d小時";
+"%d days" = "%d天";
+"%d hours %d minutes" = "%d小時%d分鐘";
+"%d days %d hours" = "%d天%d小時";
+"Show event status" = "顯示日程狀態";
+"Shows in-progress state and time until an event starts." = "顯示日程進行中狀態與開始倒數計時。";
+"Show event duration" = "顯示日程時長";
+"Shows total event duration after the time range." = "在時間範圍後顯示日程總時長。";

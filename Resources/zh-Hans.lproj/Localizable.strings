@@ -115,8 +115,18 @@
 "%d hours later" = "%d小时后";
 "%d hours %d minutes later" = "%d小时%d分钟后";
 "Ended" = "已结束";
-"%d minutes until end" = "%d分钟后结束";
-"%d hours until end" = "%d小时后结束";
-"%d days until end" = "%d天后结束";
-"%d hours %d minutes until end" = "%d小时%d分钟后结束";
-"%d days %d hours until end" = "%d天%d小时后结束";
+"%d minutes until end" = "剩%d分钟";
+"%d hours until end" = "剩%d小时";
+"%d days until end" = "剩%d天";
+"%d hours %d minutes until end" = "剩%d小时%d分";
+"%d days %d hours until end" = "剩%d天%d小时";
+
+"%d minutes" = "%d分钟";
+"%d hours" = "%d小时";
+"%d days" = "%d天";
+"%d hours %d minutes" = "%d小时%d分";
+"%d days %d hours" = "%d天%d小时";
+"Show event status" = "显示日程状态";
+"Shows in-progress state and time until an event starts." = "显示日程进行中状态和开始倒计时。";
+"Show event duration" = "显示日程时长";
+"Shows total event duration after the time range." = "在时间范围后显示日程总时长。";

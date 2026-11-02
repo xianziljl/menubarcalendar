@@ -24,6 +24,12 @@ struct CalendarPanelView: View {
     @AppStorage("showYearSwitchButtons")
     private var showYearSwitchButtons = false
 
+    @AppStorage("showEventStatus")
+    private var showEventStatus = true
+
+    @AppStorage("showEventDuration")
+    private var showEventDuration = true
+
     @StateObject private var eventsModel = CalendarEventsModel()
     @StateObject private var holidayModel = HolidayModel()
     @State private var displayedMonth = Calendar.current.date(
@@ -695,6 +701,12 @@ private struct EventRowView: View {
     let showsDetails: Bool
     let changeShowsDetails: (Bool) -> Void
 
+    @AppStorage("showEventStatus")
+    private var showEventStatus = true
+
+    @AppStorage("showEventDuration")
+    private var showEventDuration = true
+
     @State private var isHovered = false
 
     var body: some View {
@@ -714,12 +726,13 @@ private struct EventRowView: View {
                     Text(timeText)
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
+                        .monospacedDigit()
                         .lineLimit(1)
                 }
 
                 Spacer(minLength: 0)
 
-                if let status = statusText {
+                if showEventStatus, let status = statusText {
                     VStack(alignment: .trailing, spacing: 1) {
                         Text(status)
                             .font(.system(size: 11, weight: .medium))
@@ -778,7 +791,52 @@ private struct EventRowView: View {
 
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
-        return formatter.string(from: event.startDate) + " – " + formatter.string(from: event.endDate)
+        let rangeText = formatter.string(from: event.startDate)
+            + " – "
+            + formatter.string(from: event.endDate)
+
+        guard showEventDuration else {
+            return rangeText
+        }
+
+        return rangeText
+            + " · "
+            + durationText
+    }
+
+    private var durationText: String {
+        let duration = max(0, event.endDate.timeIntervalSince(event.startDate))
+        let totalMinutes = Int((duration / 60).rounded(.up))
+
+        if totalMinutes >= 24 * 60 {
+            let totalHours = totalMinutes / 60
+            let days = totalHours / 24
+            let hours = totalHours % 24
+
+            if hours > 0 {
+                return String(
+                    format: L10n.text("%d days %d hours"),
+                    days,
+                    hours
+                )
+            }
+            return String(format: L10n.text("%d days"), days)
+        }
+
+        let hours = totalMinutes / 60
+        let minutes = totalMinutes % 60
+
+        if hours > 0, minutes > 0 {
+            return String(
+                format: L10n.text("%d hours %d minutes"),
+                hours,
+                minutes
+            )
+        }
+        if hours > 0 {
+            return String(format: L10n.text("%d hours"), hours)
+        }
+        return String(format: L10n.text("%d minutes"), totalMinutes)
     }
 
     private var isInProgress: Bool {

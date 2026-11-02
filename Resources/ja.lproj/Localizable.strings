@@ -120,3 +120,13 @@
 "%d days until end" = "%d日後に終了";
 "%d hours %d minutes until end" = "%d時間%d分後に終了";
 "%d days %d hours until end" = "%d日%d時間後に終了";
+
+"%d minutes" = "%d分";
+"%d hours" = "%d時間";
+"%d days" = "%d日";
+"%d hours %d minutes" = "%d時間%d分";
+"%d days %d hours" = "%d日%d時間";
+"Show event status" = "予定の状態を表示";
+"Shows in-progress state and time until an event starts." = "進行中の状態と開始までの残り時間を表示します。";
+"Show event duration" = "予定の長さを表示";
+"Shows total event duration after the time range." = "時間範囲の後に予定の合計時間を表示します。";

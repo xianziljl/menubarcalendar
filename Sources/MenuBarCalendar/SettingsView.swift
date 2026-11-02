@@ -35,6 +35,12 @@ struct SettingsView: View {
     @AppStorage("showYearSwitchButtons")
     private var showYearSwitchButtons = false
 
+    @AppStorage("showEventStatus")
+    private var showEventStatus = true
+
+    @AppStorage("showEventDuration")
+    private var showEventDuration = true
+
     @AppStorage("launchAtLogin")
     private var launchAtLogin = false
 
@@ -125,6 +131,21 @@ struct SettingsView: View {
 
     private var calendarPanelSection: some View {
         SettingsCard(title: L10n.text("Calendar Panel")) {
+            SwitchRow(label: L10n.text("Dual Month Display"), isOn: isDualMonthBinding)
+
+            if monthDisplayModeRaw == MonthDisplayMode.dual.rawValue {
+                RowDivider()
+                SegmentedRow(
+                    title: L10n.text("Dual Month Layout"),
+                    selection: $dualMonthLayoutRaw,
+                    options: [
+                        (DualMonthLayout.horizontal.rawValue, L10n.text("Horizontal")),
+                        (DualMonthLayout.vertical.rawValue, L10n.text("Vertical"))
+                    ]
+                )
+            }
+
+            RowDivider()
             MenuRow(
                 label: L10n.text("Week starts on"),
                 selection: $firstWeekday,
@@ -156,19 +177,17 @@ struct SettingsView: View {
                 isOn: $showHolidayBadges
             )
             RowDivider()
-            SwitchRow(label: L10n.text("Dual Month Display"), isOn: isDualMonthBinding)
-
-            if monthDisplayModeRaw == MonthDisplayMode.dual.rawValue {
-                RowDivider()
-                SegmentedRow(
-                    title: L10n.text("Dual Month Layout"),
-                    selection: $dualMonthLayoutRaw,
-                    options: [
-                        (DualMonthLayout.horizontal.rawValue, L10n.text("Horizontal")),
-                        (DualMonthLayout.vertical.rawValue, L10n.text("Vertical"))
-                    ]
-                )
-            }
+            SwitchRow(
+                label: L10n.text("Show event status"),
+                hint: L10n.text("Shows in-progress state and time until an event starts."),
+                isOn: $showEventStatus
+            )
+            RowDivider()
+            SwitchRow(
+                label: L10n.text("Show event duration"),
+                hint: L10n.text("Shows total event duration after the time range."),
+                isOn: $showEventDuration
+            )
         }
     }
 

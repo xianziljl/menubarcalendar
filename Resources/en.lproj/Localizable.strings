@@ -120,3 +120,13 @@
 "%d days until end" = "%d days until end";
 "%d hours %d minutes until end" = "%d hours %d minutes until end";
 "%d days %d hours until end" = "%d days %d hours until end";
+
+"%d minutes" = "%d minutes";
+"%d hours" = "%d hours";
+"%d days" = "%d days";
+"%d hours %d minutes" = "%d hours %d minutes";
+"%d days %d hours" = "%d days %d hours";
+"Show event status" = "Show event status";
+"Shows in-progress state and time until an event starts." = "Shows in-progress state and time until an event starts.";
+"Show event duration" = "Show event duration";
+"Shows total event duration after the time range." = "Shows total event duration after the time range.";
