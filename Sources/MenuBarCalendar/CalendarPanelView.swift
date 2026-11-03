@@ -429,14 +429,6 @@ struct CalendarPanelView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, 4)
-            } else if eventsModel.isLoading && eventsModel.items.isEmpty {
-                HStack {
-                    Spacer()
-                    ProgressView()
-                        .controlSize(.small)
-                    Spacer()
-                }
-                .padding(.vertical, 6)
             } else if eventsModel.items.isEmpty {
                 Text(L10n.text("No events for this day."))
                     .font(.system(size: 12))
