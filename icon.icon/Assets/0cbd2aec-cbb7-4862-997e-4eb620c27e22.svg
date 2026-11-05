@@ -1,0 +1,12 @@
+<svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+	<defs>
+		<linearGradient id="g1" x2="1" gradientUnits="userSpaceOnUse" gradientTransform="matrix(124.335,433.608,-684.685,196.33,449.833,0)">
+			<stop offset="0" stop-color="#007fff"/>
+			<stop offset="1" stop-color="#0054cb"/>
+		</linearGradient>
+	</defs>
+	<style>
+		.s0 { fill: url(#g1) } 
+	</style>
+	<path id="形状 1" class="s0" d="m1024 0v433.61h-0.01c-0.87-78.62-64.88-142.09-143.71-142.09 0 0-217.08 0-245.22 0-41.37 0-98.56-68.28-98.56-68.28-13.67-13.66-35.83-13.66-49.49 0 0 0-61.92 68.28-104.13 68.28-35.83 0-239.16 0-239.16 0-78.83 0-142.84 63.47-143.71 142.09h-0.01v-433.61z"/>
+</svg>

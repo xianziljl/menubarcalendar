@@ -42,12 +42,44 @@ cp "$BINARY_PATH" "$MACOS_DIR/$APP_NAME"
 # --- Strip symbols (release only; .build/ original stays intact) -------------------
 strip -x "${MACOS_DIR}/${APP_NAME}"
 
-# --- Icon (optional until provided) ------------------------------------------------
-if [[ -f "Resources/AppIcon.icns" ]]; then
+# --- Icon (Icon Composer -> Assets.car + AppIcon.icns) ------------------------------
+# Preferred source: icon.icon (Icon Composer document) compiled with actool,
+# producing a layered Assets.car (macOS 26+ Liquid Glass) and a legacy AppIcon.icns
+# fallback for older macOS versions.
+if [[ -d "icon.icon" ]]; then
+  TMP_ICON="$(mktemp -d)"
+  cp -R "icon.icon" "${TMP_ICON}/AppIcon.icon"
+  mkdir -p "${TMP_ICON}/out"
+  ACTOOL="$(xcrun -f actool)"
+  "$ACTOOL" "${TMP_ICON}/AppIcon.icon" \
+    --compile "${TMP_ICON}/out" \
+    --platform macosx \
+    --target-device mac \
+    --minimum-deployment-target 12.0 \
+    --app-icon AppIcon \
+    --enable-on-demand-resources NO \
+    --output-partial-info-plist "${TMP_ICON}/info.plist"
+  cp "${TMP_ICON}/out/Assets.car" "${RESOURCES_DIR}/Assets.car"
+
+  # Legacy fallback icns: render 1024px from Icon Composer so the icns carries
+  # all standard sizes (actool's built-in icns only has 16-256pt renditions).
+  ICTOOL="/Applications/Icon Composer.app/Contents/Executables/ictool"
+  if [[ -x "$ICTOOL" ]] && \
+     "$ICTOOL" "${TMP_ICON}/AppIcon.icon" \
+       --export-image --output-file "${TMP_ICON}/icon1024.png" \
+       --platform macOS --rendition Default \
+       --width 1024 --height 1024 --scale 1 >/dev/null 2>&1; then
+    ./make_icon.sh "${TMP_ICON}/icon1024.png"
+    cp "Resources/AppIcon.icns" "${RESOURCES_DIR}/AppIcon.icns"
+  else
+    cp "${TMP_ICON}/out/AppIcon.icns" "${RESOURCES_DIR}/AppIcon.icns"
+  fi
+  rm -rf "$TMP_ICON"
+elif [[ -f "Resources/AppIcon.icns" ]]; then
   cp "Resources/AppIcon.icns" "${RESOURCES_DIR}/AppIcon.icns"
 else
   echo "Warning: Resources/AppIcon.icns not found — app will have no icon."
-  echo "         Run ./make_icon.sh <1024x1024.png> to generate one."
+  echo "         Add icon.icon (Icon Composer) or run ./make_icon.sh <1024x1024.png>."
 fi
 
 cat > "${APP_DIR}/Contents/Info.plist" <<PLIST
@@ -81,6 +113,8 @@ cat > "${APP_DIR}/Contents/Info.plist" <<PLIST
     <key>CFBundleVersion</key>
     <string>${BUILD_NUMBER}</string>
     <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
+    <key>CFBundleIconName</key>
     <string>AppIcon</string>
     <key>LSApplicationCategoryType</key>
     <string>public.app-category.utilities</string>
