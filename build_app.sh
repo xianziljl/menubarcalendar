@@ -130,6 +130,8 @@ cat > "${APP_DIR}/Contents/Info.plist" <<PLIST
     <string>需要完整访问日历以显示选中日期的日程。</string>
     <key>NSHumanReadableCopyright</key>
     <string>Copyright © 2026. All rights reserved.</string>
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
 </dict>
 </plist>
 PLIST

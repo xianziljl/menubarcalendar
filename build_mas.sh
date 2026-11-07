@@ -120,6 +120,8 @@ cat > "${APP_DIR}/Contents/Info.plist" <<PLIST
     <string>需要完整访问日历以显示选中日期的日程。</string>
     <key>NSHumanReadableCopyright</key>
     <string>Copyright © 2026. All rights reserved.</string>
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
 </dict>
 </plist>
 PLIST
@@ -130,9 +132,38 @@ ditto "Resources/zh-Hans.lproj" "${RESOURCES_DIR}/zh-Hans.lproj"
 ditto "Resources/zh-Hant.lproj" "${RESOURCES_DIR}/zh-Hant.lproj"
 ditto "Resources/ja.lproj" "${RESOURCES_DIR}/ja.lproj"
 
+# Embed provisioning profile (required for Mac App Store / TestFlight)
+SIGN_ENTITLEMENTS_FILE="$ENTITLEMENTS_FILE"
+if [[ -f "Resources/embedded.provisionprofile" ]]; then
+  # Strip quarantine xattr so MAS uploads don't fail with ITMS-91109
+  xattr -cr "Resources/embedded.provisionprofile" 2>/dev/null || true
+  cp "Resources/embedded.provisionprofile" "${APP_DIR}/Contents/embedded.provisionprofile"
+  echo "==> Embedded provisioning profile"
+
+  # Merge provisioning profile entitlements with app entitlements so the
+  # code signature includes application-identifier (required by ITMS-90886)
+  TMP_PROF_ENT="$(mktemp -t profent).plist"
+  TMP_PROF_MERGED="$(mktemp -t profmerged).plist"
+  security cms -D -i "Resources/embedded.provisionprofile" \
+    > "${TMP_PROF_ENT}.raw.plist" 2>/dev/null
+  plutil -extract Entitlements xml1 \
+    -o "${TMP_PROF_ENT}" "${TMP_PROF_ENT}.raw.plist"
+  cp "${TMP_PROF_ENT}" "${TMP_PROF_MERGED}"
+  /usr/libexec/PlistBuddy -c "Merge ${ENTITLEMENTS_FILE}" "${TMP_PROF_MERGED}"
+  SIGN_ENTITLEMENTS_FILE="${TMP_PROF_MERGED}"
+  rm -f "${TMP_PROF_ENT}.raw.plist" "${TMP_PROF_ENT}"
+else
+  echo "Warning: Resources/embedded.provisionprofile not found."
+  echo "         Mac App Store / TestFlight uploads will fail without it."
+  echo "         Download from developer.apple.com and place it here."
+fi
+
+echo "==> Strip quarantine xattr from .app"
+xattr -cr "$APP_DIR" 2>/dev/null || true
+
 echo "==> Codesign .app with ${SIGN_APP_IDENTITY}"
 codesign --force --sign "$SIGN_APP_IDENTITY" --options runtime --timestamp \
-  --entitlements "$ENTITLEMENTS_FILE" "$APP_DIR"
+  --entitlements "$SIGN_ENTITLEMENTS_FILE" "$APP_DIR"
 
 echo "==> Package .pkg with ${SIGN_INSTALLER_IDENTITY}"
 rm -f "$PKG_PATH"
