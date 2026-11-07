@@ -1,1 +1,3 @@
 "CFBundleDisplayName" = "Menubar Calendar";
+"NSCalendarsUsageDescription" = "メニューバーのパネルで選択した日付の予定を表示するために、カレンダーへのアクセスが必要です。";
+"NSCalendarsFullAccessUsageDescription" = "選択した日付の予定を表示するために、カレンダーへのフルアクセスが必要です。";

@@ -1,1 +1,3 @@
 "CFBundleDisplayName" = "Menubar Calendar";
+"NSCalendarsUsageDescription" = "Access to your calendars is needed to show events for the selected date in the menu bar panel.";
+"NSCalendarsFullAccessUsageDescription" = "Full access to your calendars is needed to display events for the selected date.";

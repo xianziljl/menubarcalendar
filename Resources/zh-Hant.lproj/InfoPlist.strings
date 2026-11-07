@@ -1,1 +1,3 @@
 "CFBundleDisplayName" = "Menubar Calendar";
+"NSCalendarsUsageDescription" = "需要存取您的行事曆，以便在選單列面板中顯示所選日期的行程。";
+"NSCalendarsFullAccessUsageDescription" = "需要完整存取您的行事曆，以便顯示所選日期的行程。";
