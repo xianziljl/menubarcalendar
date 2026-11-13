@@ -505,7 +505,11 @@ struct CalendarPanelView: View {
         let formatter = DateFormatter()
         formatter.setLocalizedDateFormatFromTemplate("MMMd")
         let dateText = formatter.string(from: selectedDate)
-        let weekNumber = calendar.component(.weekOfYear, from: selectedDate)
+        // Week boundaries must follow the user's "week starts on" setting so
+        // the label matches the grid rows, not the system calendar.
+        var weekCalendar = calendar
+        weekCalendar.firstWeekday = firstWeekday
+        let weekNumber = weekCalendar.component(.weekOfYear, from: selectedDate)
         let weekText = String(format: L10n.text("Week %d"), weekNumber)
         return "\(dateText) · \(weekText)"
     }
