@@ -13,6 +13,11 @@ let package = Package(
             swiftSettings: [
                 .unsafeFlags(["-strict-concurrency=minimal"])
             ]
+        ),
+        .testTarget(
+            name: "MenuBarCalendarTests",
+            dependencies: ["MenuBarCalendar"],
+            path: "Tests/MenuBarCalendarTests"
         )
     ]
 )
