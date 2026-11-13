@@ -37,6 +37,22 @@ mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
 cp "$BINARY_PATH" "${MACOS_DIR}/${APP_NAME}"
 strip -x "${MACOS_DIR}/${APP_NAME}"
 
+# --- Fix LC_BUILD_VERSION sdk field -------------------------------------------------
+# SwiftPM 把 deployment target (12.0) 写进二进制 LC_BUILD_VERSION 的 sdk 字段，
+# 系统会因此按旧版 SDK 应用渲染，MenuBarExtra 面板拿不到 macOS 26+ 的 Liquid
+# Glass 样式。这里改写为真实 SDK 版本；必须在签名前执行。
+SDK_VERSION="$(xcrun --show-sdk-version 2>/dev/null || true)"
+if [[ -n "$SDK_VERSION" ]] && command -v vtool >/dev/null 2>&1; then
+  TMP_BIN="$(mktemp -t binary)"
+  if vtool -set-build-version macos 12.0 "$SDK_VERSION" -replace \
+       -output "$TMP_BIN" "${MACOS_DIR}/${APP_NAME}"; then
+    mv "$TMP_BIN" "${MACOS_DIR}/${APP_NAME}"
+  else
+    rm -f "$TMP_BIN"
+    echo "Warning: vtool patch failed — panel may render with legacy styling."
+  fi
+fi
+
 # Icon
 if [[ -d "icon.icon" ]]; then
   TMP_ICON="$(mktemp -d)"
