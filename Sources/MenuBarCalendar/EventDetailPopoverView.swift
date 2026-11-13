@@ -272,8 +272,14 @@ struct EventDetailPopoverView: View {
 
             formRow(L10n.text("End time")) {
                 if editIsAllDay {
-                    Text(dateText(editEndDate))
-                        .font(.system(size: 13))
+                    DatePicker(
+                        "",
+                        selection: $editEndDate,
+                        in: editStartDate...,
+                        displayedComponents: [.date]
+                    )
+                    .labelsHidden()
+                    .datePickerStyle(.field)
                 } else {
                     DatePicker(
                         "",
@@ -438,8 +444,11 @@ struct EventDetailPopoverView: View {
     private func updateDatesForAllDay(_ isAllDay: Bool) {
         if isAllDay {
             editStartDate = calendar.startOfDay(for: editStartDate)
-            // macOS Calendar shows an all-day event's end date as the same day in editing UI.
-            editEndDate = calendar.startOfDay(for: editStartDate)
+            // Keep the selected span; only clamp when end moved before start.
+            // The editing UI shows all-day end dates inclusively (same as
+            // macOS Calendar), so a multi-day span must survive the toggle.
+            let dayEnd = calendar.startOfDay(for: editEndDate)
+            editEndDate = dayEnd < editStartDate ? editStartDate : dayEnd
         } else if editEndDate <= editStartDate {
             editEndDate = editStartDate.addingTimeInterval(60 * 60)
         }

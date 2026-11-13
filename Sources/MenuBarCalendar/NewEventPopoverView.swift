@@ -134,8 +134,14 @@ struct NewEventPopoverView: View {
 
             formRow(L10n.text("End time")) {
                 if isAllDay {
-                    Text(dateText(endDate))
-                        .font(.system(size: 13))
+                    DatePicker(
+                        "",
+                        selection: $endDate,
+                        in: startDate...,
+                        displayedComponents: [.date]
+                    )
+                    .labelsHidden()
+                    .datePickerStyle(.field)
                 } else {
                     DatePicker(
                         "",

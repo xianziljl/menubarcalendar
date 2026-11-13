@@ -451,10 +451,14 @@ final class CalendarEventsModel: ObservableObject {
 
         if isAllDay {
             normalizedStartDate = normalizedCalendar.startOfDay(for: startDate)
-            // EventKit models a one-day all-day event with start/end on the same midnight.
-            // The calendar UI treats all-day end dates inclusively; adding one day here
-            // makes the event appear on the following day in Calendar.
-            normalizedEndDate = normalizedCalendar.startOfDay(for: max(endDate, normalizedStartDate))
+            // The editing UI shows the inclusive last day (macOS Calendar style),
+            // but EventKit stores the exclusive end at the midnight AFTER it, and
+            // a one-day all-day event as start == end on the same midnight.
+            // Saving the inclusive day directly would silently drop the last day.
+            let inclusiveEnd = normalizedCalendar.startOfDay(for: max(endDate, normalizedStartDate))
+            normalizedEndDate = inclusiveEnd <= normalizedStartDate
+                ? normalizedStartDate
+                : normalizedCalendar.date(byAdding: .day, value: 1, to: inclusiveEnd) ?? inclusiveEnd
         } else {
             normalizedStartDate = startDate
             normalizedEndDate = max(
@@ -558,7 +562,13 @@ final class CalendarEventsModel: ObservableObject {
 
         if isAllDay {
             normalizedStartDate = normalizedCalendar.startOfDay(for: startDate)
-            normalizedEndDate = normalizedCalendar.startOfDay(for: max(endDate, normalizedStartDate))
+            // Same inclusive-UI → exclusive-EventKit conversion as updateEvent:
+            // a one-day all-day event stays start == end; multi-day events end
+            // at the midnight after the inclusive last day.
+            let inclusiveEnd = normalizedCalendar.startOfDay(for: max(endDate, normalizedStartDate))
+            normalizedEndDate = inclusiveEnd <= normalizedStartDate
+                ? normalizedStartDate
+                : normalizedCalendar.date(byAdding: .day, value: 1, to: inclusiveEnd) ?? inclusiveEnd
         } else {
             normalizedStartDate = startDate
             normalizedEndDate = max(endDate, startDate.addingTimeInterval(60))
