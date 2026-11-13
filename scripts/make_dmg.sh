@@ -1,12 +1,15 @@
 #!/bin/zsh
 set -euo pipefail
 
+# Anchor to the repo root so relative dist/ paths work from anywhere.
+cd "${0:A:h}/.." || exit 1
+
 APP_NAME="MenuBarCalendar"
 APP_DIR="dist/${APP_NAME}.app"
 DMG_NAME="${APP_NAME}"
 
 if [[ ! -d "$APP_DIR" ]]; then
-  echo "Error: ${APP_DIR} not found. Run ./build_app.sh first." >&2
+  echo "Error: ${APP_DIR} not found. Run ./scripts/build_app.sh first." >&2
   exit 1
 fi
 

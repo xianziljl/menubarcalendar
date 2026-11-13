@@ -9,6 +9,15 @@
 #   write_plist_and_resources
 # Signing differs per distribution channel and stays in the caller.
 
+# Capture dirs once at file scope: inside functions $0 is the function name
+# (zsh functionargzero), so ${0:A:h} must not be used there.
+SCRIPTS_DIR="${0:A:h}"
+REPO_ROOT="${SCRIPTS_DIR}/.."
+
+# Anchor to the repo root so relative paths (dist/, Resources/, .build/)
+# resolve the same no matter where the entry script is invoked from.
+cd "$REPO_ROOT" || exit 1
+
 BUILD_DIR=".build"
 APP_DIR="dist/${APP_NAME}.app"
 MACOS_DIR="${APP_DIR}/Contents/MacOS"
@@ -98,7 +107,7 @@ compile_icon_assets() {
          --export-image --output-file "${tmp_icon}/icon1024.png" \
          --platform macOS --rendition Default \
          --width 1024 --height 1024 --scale 1 >/dev/null 2>&1; then
-      ./make_icon.sh "${tmp_icon}/icon1024.png"
+      "${SCRIPTS_DIR}/make_icon.sh" "${tmp_icon}/icon1024.png"
       cp "Resources/AppIcon.icns" "${RESOURCES_DIR}/AppIcon.icns"
     else
       cp "${tmp_icon}/out/AppIcon.icns" "${RESOURCES_DIR}/AppIcon.icns"

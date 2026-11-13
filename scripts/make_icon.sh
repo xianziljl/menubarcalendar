@@ -1,12 +1,15 @@
 #!/bin/zsh
 set -euo pipefail
 
-# Usage: ./make_icon.sh <path-to-square-source.png>
+# Usage: scripts/make_icon.sh <path-to-square-source.png>
 # Generates Resources/AppIcon.icns from a single source image.
+
+# Anchor to the repo root so relative Resources/ paths work from anywhere.
+cd "${0:A:h}/.." || exit 1
 
 SRC="${1:-}"
 if [[ -z "$SRC" || ! -f "$SRC" ]]; then
-  echo "Usage: ./make_icon.sh <path-to-square-source.png>" >&2
+  echo "Usage: scripts/make_icon.sh <path-to-square-source.png>" >&2
   exit 1
 fi
 

@@ -4,13 +4,13 @@ set -euo pipefail
 APP_NAME="MenuBarCalendar"
 CONFIGURATION="release"
 
-source "${0:A:h}/scripts/bundle-common.sh"
+source "${0:A:h}/bundle-common.sh"
 
 resolve_version "${1:-}"
 
 # --- Signing ---------------------------------------------------------------------
 # Default: ad-hoc ("-") with entitlements — sandbox enabled, works locally.
-# Distribution: SIGN_IDENTITY="Developer ID Application: Name (TEAMID)" ./build_app.sh
+# Distribution: SIGN_IDENTITY="Developer ID Application: Name (TEAMID)" ./scripts/build_app.sh
 #               (adds --options runtime --timestamp automatically)
 SIGN_IDENTITY="${SIGN_IDENTITY:--}"
 

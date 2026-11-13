@@ -5,7 +5,7 @@ APP_NAME="MenuBarCalendar"
 CONFIGURATION="release"
 PKG_PATH="dist/${APP_NAME}.pkg"
 
-source "${0:A:h}/scripts/bundle-common.sh"
+source "${0:A:h}/bundle-common.sh"
 
 resolve_version "${1:-}"
 

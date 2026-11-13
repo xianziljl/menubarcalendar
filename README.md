@@ -22,7 +22,7 @@
 ## 构建并打包
 
 ```bash
-./build_app.sh
+./scripts/build_app.sh
 ```
 
 产物位于：
@@ -51,7 +51,7 @@ swift build
 
 ## 打包细节
 
-当前构建脚本（`build_app.sh`）已内置：
+当前构建脚本（`scripts/build_app.sh`）已内置：
 
 - **Universal Binary**：同时编译 arm64 + x86_64（Intel 和 Apple Silicon 通用）。
 - **App Sandbox**：通过 `MenuBarCalendar.entitlements` 启用沙盒（App Store 必需），
@@ -60,15 +60,15 @@ swift build
   build 号取 git 提交数。
 
 ```bash
-./build_app.sh            # 默认 ad-hoc 签名，本地可用
-./build_app.sh 1.2.0      # 指定版本号
+./scripts/build_app.sh            # 默认 ad-hoc 签名，本地可用
+./scripts/build_app.sh 1.2.0      # 指定版本号
 ```
 
 ### 生成 DMG
 
 ```bash
-./make_dmg.sh             # 产出 dist/MenuBarCalendar.dmg
-./make_dmg.sh 1.2.0       # 产出 dist/MenuBarCalendar-1.2.0.dmg
+./scripts/make_dmg.sh             # 产出 dist/MenuBarCalendar.dmg
+./scripts/make_dmg.sh 1.2.0       # 产出 dist/MenuBarCalendar-1.2.0.dmg
 ```
 
 > 注意：DMG 未公证，接收方首次打开需右键 → 打开（或 `xattr -cr MenuBarCalendar.app`）。
@@ -76,15 +76,15 @@ swift build
 ### 应用图标
 
 ```bash
-./make_icon.sh path/to/1024x1024.png   # 生成 Resources/AppIcon.icns
-./build_app.sh                          # 重新打包即自动带上
+./scripts/make_icon.sh path/to/1024x1024.png   # 生成 Resources/AppIcon.icns
+./scripts/build_app.sh                          # 重新打包即自动带上
 ```
 
 ### 将来正式签名（开通 Developer Program 后）
 
 ```bash
 # DMG 分发（Developer ID + 公证）
-SIGN_IDENTITY="Developer ID Application: 你的名字 (TEAMID)" ./build_app.sh
+SIGN_IDENTITY="Developer ID Application: 你的名字 (TEAMID)" ./scripts/build_app.sh
 xcrun notarytool submit dist/MenuBarCalendar.dmg --keychain-profile PROFILE --wait
 xcrun stapler staple dist/MenuBarCalendar.dmg
 ```
