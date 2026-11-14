@@ -345,10 +345,9 @@ extension DateFormatter {
     private static var statusFormatterCache: [String: DateFormatter] = [:]
 
     static func statusDateFormatter(pattern rawPattern: String) -> DateFormatter {
-        let pattern = rawPattern
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: "YYYY", with: "yyyy")
-            .replacingOccurrences(of: "DD", with: "dd")
+        let pattern = normalizeUnsafeTokens(
+            in: rawPattern.trimmingCharacters(in: .whitespacesAndNewlines)
+        )
 
         let cacheKey = pattern.isEmpty ? "yyyy-MM-dd" : pattern
         if let formatter = statusFormatterCache[cacheKey] {
@@ -360,5 +359,38 @@ extension DateFormatter {
         formatter.calendar = Calendar.current
         statusFormatterCache[cacheKey] = formatter
         return formatter
+    }
+
+    /// Rewrites week-based year (Y) and day-of-year (D) tokens to their
+    /// calendar-year / day-of-month counterparts, but only OUTSIDE single
+    /// quotes — quoted text is literal output and must stay untouched.
+    private static func normalizeUnsafeTokens(in pattern: String) -> String {
+        var result = ""
+        result.reserveCapacity(pattern.count)
+        var isQuoted = false
+        var index = pattern.startIndex
+
+        while index < pattern.endIndex {
+            let character = pattern[index]
+
+            if character == "'" {
+                isQuoted.toggle()
+                result.append(character)
+            } else if !isQuoted, character == "Y" || character == "D" {
+                let unsafe = character
+                let replacement = unsafe == "Y" ? "y" : "d"
+                while index < pattern.endIndex, pattern[index] == unsafe {
+                    result.append(replacement)
+                    index = pattern.index(after: index)
+                }
+                continue
+            } else {
+                result.append(character)
+            }
+
+            index = pattern.index(after: index)
+        }
+
+        return result
     }
 }

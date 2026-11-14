@@ -166,9 +166,9 @@ write_plist_and_resources() {
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
     <key>NSCalendarsUsageDescription</key>
-    <string>需要访问日历以在菜单栏面板中显示选中日期的日程。</string>
+    <string>Access to your calendars is needed to show events for the selected date in the menu bar panel.</string>
     <key>NSCalendarsFullAccessUsageDescription</key>
-    <string>需要完整访问日历以显示选中日期的日程。</string>
+    <string>Full access to your calendars is needed to display events for the selected date.</string>
     <key>NSHumanReadableCopyright</key>
     <string>Copyright © 2026. All rights reserved.</string>
     <key>ITSAppUsesNonExemptEncryption</key>

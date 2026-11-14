@@ -77,6 +77,8 @@ final class CalendarEventsModel: ObservableObject {
     private var loadedVisibleEnd: Date?
     private var latestRequestID = UUID()
     private var dayItems: [Date: [CalendarEventItem]] = [:]
+    private var changeNotificationTask: Task<Void, Never>?
+    private var lastOwnChangeDate = Date.distantPast
 
     init() {
         updateAuthorization()
@@ -87,13 +89,7 @@ final class CalendarEventsModel: ObservableObject {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
-                guard let self else { return }
-                await self.load(
-                    for: self.loadedDate ?? Date(),
-                    displayedMonth: self.loadedDisplayedMonth,
-                    monthCount: self.loadedMonthCount,
-                    isAutomaticRefresh: true
-                )
+                self?.scheduleCoalescedReload()
             }
         }
     }
@@ -101,6 +97,27 @@ final class CalendarEventsModel: ObservableObject {
     deinit {
         if let notificationToken {
             NotificationCenter.default.removeObserver(notificationToken)
+        }
+        changeNotificationTask?.cancel()
+    }
+
+    /// EKEventStoreChanged can burst (one notification per save) and each one
+    /// triggers a full-month requery. Coalesce them; also skip the window
+    /// right after our own save, which already refreshed the loaded events.
+    private func scheduleCoalescedReload() {
+        changeNotificationTask?.cancel()
+
+        changeNotificationTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            guard !Task.isCancelled, let self else { return }
+            guard Date().timeIntervalSince(self.lastOwnChangeDate) > 1 else { return }
+
+            await self.load(
+                for: self.loadedDate ?? Date(),
+                displayedMonth: self.loadedDisplayedMonth,
+                monthCount: self.loadedMonthCount,
+                isAutomaticRefresh: true
+            )
         }
     }
 
@@ -528,6 +545,7 @@ final class CalendarEventsModel: ObservableObject {
         // span turns a moved/changed series occurrence into an exception without
         // touching occurrences before or after it.
         try eventStore.save(event, span: .thisEvent, commit: true)
+        lastOwnChangeDate = Date()
 
         // Calendar moves and all-day changes should be reflected immediately, even when
         // the EventKit change notification is delivered asynchronously.
@@ -577,7 +595,7 @@ final class CalendarEventsModel: ObservableObject {
         let event = EKEvent(eventStore: eventStore)
         event.calendar = targetCalendar
         event.title = title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            ? L10n.text("New Event")
+            ? L10n.text("Untitled Event")
             : title.trimmingCharacters(in: .whitespacesAndNewlines)
         event.location = location?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == true
             ? nil
@@ -631,6 +649,7 @@ final class CalendarEventsModel: ObservableObject {
         }
 
         try eventStore.save(event, span: .thisEvent, commit: true)
+        lastOwnChangeDate = Date()
         await refreshLoadedEvents()
     }
 
@@ -655,6 +674,7 @@ final class CalendarEventsModel: ObservableObject {
             ? .futureEvents
             : .thisEvent
         try eventStore.remove(event, span: eventKitSpan, commit: true)
+        lastOwnChangeDate = Date()
         await refreshLoadedEvents()
     }
 

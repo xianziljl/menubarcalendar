@@ -9,13 +9,16 @@ final class DateFormatterTests: XCTestCase {
         XCTAssertEqual(DateFormatter.statusDateFormatter(pattern: "MM/DD").dateFormat, "MM/dd")
     }
 
-    func testQuotedTokensAreRewrittenToo() {
-        // KNOWN QUIRK: the YYYY→yyyy rewrite is a blind string replace, so a
-        // quoted literal 'YYYY' (meant to print as-is) also becomes 'yyyy'.
-        // Documenting current behavior; fix would require quote-aware scanning.
+    func testKeepsQuotedTokensLiteral() {
+        // Quoted text is literal output, not a token — it must survive the
+        // rewrite untouched.
         XCTAssertEqual(
             DateFormatter.statusDateFormatter(pattern: "'YYYY' yyyy").dateFormat,
-            "'yyyy' yyyy"
+            "'YYYY' yyyy"
+        )
+        XCTAssertEqual(
+            DateFormatter.statusDateFormatter(pattern: "MM 'DD' dd").dateFormat,
+            "MM 'DD' dd"
         )
     }
 
