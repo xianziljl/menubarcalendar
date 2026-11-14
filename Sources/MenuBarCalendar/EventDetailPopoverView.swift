@@ -38,12 +38,12 @@ struct EventDetailPopoverView: View {
                 if event.canEdit {
                     TextField(L10n.text("Add Location"), text: $editLocation)
                         .textFieldStyle(.plain)
-                        .font(.system(size: 13))
+                        .font(.system(.body))
                         .padding(.top, 2)
                         .onChange(of: editLocation) { _ in scheduleSave() }
                 } else {
                     Text(editLocation)
-                        .font(.system(size: 13))
+                        .font(.system(.body))
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
@@ -66,11 +66,11 @@ struct EventDetailPopoverView: View {
                     if event.canEdit {
                         TextField(L10n.text("Add URL"), text: $editURL)
                             .textFieldStyle(.plain)
-                            .font(.system(size: 13))
+                            .font(.system(.body))
                             .onChange(of: editURL) { _ in scheduleSave() }
                     } else {
                         Text(editURL)
-                            .font(.system(size: 13))
+                            .font(.system(.body))
                             .foregroundStyle(.secondary)
                             .lineLimit(3)
                             .truncationMode(.middle)
@@ -80,7 +80,7 @@ struct EventDetailPopoverView: View {
 
             if let errorMessage {
                 Text(errorMessage)
-                    .font(.system(size: 11))
+                    .font(.system(.subheadline))
                     .foregroundStyle(.red)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -172,12 +172,12 @@ struct EventDetailPopoverView: View {
             if event.canEdit {
                 TextField(L10n.text("Title"), text: $editTitle)
                     .textFieldStyle(.plain)
-                    .font(.system(size: 17, weight: .bold))
+                    .font(.system(.title2).weight(.bold))
                     .lineLimit(2)
                     .onChange(of: editTitle) { _ in scheduleSave() }
             } else {
                 Text(editTitle)
-                    .font(.system(size: 17, weight: .bold))
+                    .font(.system(.title2).weight(.bold))
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -229,7 +229,7 @@ struct EventDetailPopoverView: View {
                 .frame(width: 10, height: 10)
 
             Text(selectedCalendarTitle)
-                .font(.system(size: 12, weight: .medium))
+                .font(.system(.callout).weight(.medium))
                 .lineLimit(1)
                 .truncationMode(.tail)
         }
@@ -258,7 +258,7 @@ struct EventDetailPopoverView: View {
             formRow(L10n.text("Start time")) {
                 if editIsAllDay {
                     Text(dateText(editStartDate))
-                        .font(.system(size: 13))
+                        .font(.system(.body))
                 } else {
                     DatePicker(
                         "",
@@ -320,29 +320,29 @@ struct EventDetailPopoverView: View {
         VStack(alignment: .leading, spacing: 10) {
             formRow(L10n.text("All day")) {
                 Text(editIsAllDay ? L10n.text("On") : L10n.text("Off"))
-                    .font(.system(size: 13))
+                    .font(.system(.body))
             }
 
             formRow(L10n.text("Start time")) {
                 Text(dateTimeText(editStartDate, isAllDay: editIsAllDay))
-                    .font(.system(size: 13))
+                    .font(.system(.body))
                     .fixedSize(horizontal: false, vertical: true)
             }
 
             formRow(L10n.text("End time")) {
                 Text(dateTimeText(editEndDate, isAllDay: editIsAllDay))
-                    .font(.system(size: 13))
+                    .font(.system(.body))
                     .fixedSize(horizontal: false, vertical: true)
             }
 
             formRow(L10n.text("Repeat")) {
                 Text(recurrenceSelection.displayText)
-                    .font(.system(size: 13))
+                    .font(.system(.body))
             }
 
             formRow(L10n.text("Alert")) {
                 Text(reminderSelection.displayText)
-                    .font(.system(size: 13))
+                    .font(.system(.body))
             }
         }
     }
@@ -351,7 +351,7 @@ struct EventDetailPopoverView: View {
     private var notesField: some View {
         if !event.canEdit {
             Text(editNotes)
-                .font(.system(size: 13))
+                .font(.system(.body))
                 .fixedSize(horizontal: false, vertical: true)
         } else if #available(macOS 13.0, *) {
             TextField(
@@ -360,20 +360,20 @@ struct EventDetailPopoverView: View {
                 axis: .vertical
             )
             .textFieldStyle(.plain)
-            .font(.system(size: 13))
+            .font(.system(.body))
             .lineLimit(1...4)
             .fixedSize(horizontal: false, vertical: true)
             .onChange(of: editNotes) { _ in scheduleSave() }
         } else {
             ZStack(alignment: .topLeading) {
                 TextEditor(text: $editNotes)
-                    .font(.system(size: 13))
+                    .font(.system(.body))
                     .frame(height: 42)
                     .eventDetailHiddenScrollBackground()
 
                 if editNotes.isEmpty {
                     Text(L10n.text("Add Notes"))
-                        .font(.system(size: 13))
+                        .font(.system(.body))
                         .foregroundStyle(.secondary)
                         .padding(.top, 4)
                         .padding(.leading, 5)
@@ -416,7 +416,7 @@ struct EventDetailPopoverView: View {
     private func formRow(_ label: String, @ViewBuilder content: () -> some View) -> some View {
         HStack(alignment: .center, spacing: 10) {
             Text(label)
-                .font(.system(size: 12))
+                .font(.system(.callout))
                 .foregroundStyle(.primary)
                 .frame(width: 62, alignment: .trailing)
 

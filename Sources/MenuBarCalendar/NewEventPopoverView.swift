@@ -30,7 +30,7 @@ struct NewEventPopoverView: View {
             HStack(alignment: .center, spacing: 8) {
                 TextField(L10n.text("New Event"), text: $title)
                     .textFieldStyle(.plain)
-                    .font(.system(size: 17, weight: .bold))
+                    .font(.system(.title2).weight(.bold))
                     .lineLimit(1)
 
                 CalendarDropdownPicker(
@@ -43,7 +43,7 @@ struct NewEventPopoverView: View {
 
             TextField(L10n.text("Add Location"), text: $location)
                 .textFieldStyle(.plain)
-                .font(.system(size: 13))
+                .font(.system(.body))
                 .padding(.top, 2)
 
             Divider()
@@ -58,11 +58,11 @@ struct NewEventPopoverView: View {
 
             TextField(L10n.text("Add URL"), text: $urlText)
                 .textFieldStyle(.plain)
-                .font(.system(size: 13))
+                .font(.system(.body))
 
             if let errorMessage {
                 Text(errorMessage)
-                    .font(.system(size: 11))
+                    .font(.system(.subheadline))
                     .foregroundStyle(.red)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -120,7 +120,7 @@ struct NewEventPopoverView: View {
             formRow(L10n.text("Start time")) {
                 if isAllDay {
                     Text(dateText(startDate))
-                        .font(.system(size: 13))
+                        .font(.system(.body))
                 } else {
                     DatePicker(
                         "",
@@ -191,20 +191,20 @@ struct NewEventPopoverView: View {
                 axis: .vertical
             )
             .textFieldStyle(.plain)
-            .font(.system(size: 13))
+            .font(.system(.body))
             .lineLimit(1...4)
             .fixedSize(horizontal: false, vertical: true)
         } else {
             TextField(L10n.text("Add Notes"), text: $notes)
                 .textFieldStyle(.plain)
-                .font(.system(size: 13))
+                .font(.system(.body))
         }
     }
 
     private func formRow(_ label: String, @ViewBuilder content: () -> some View) -> some View {
         HStack(alignment: .center, spacing: 10) {
             Text(label)
-                .font(.system(size: 12))
+                .font(.system(.callout))
                 .frame(width: 62, alignment: .trailing)
 
             content()

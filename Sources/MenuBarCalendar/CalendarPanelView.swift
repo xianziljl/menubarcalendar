@@ -168,7 +168,7 @@ struct CalendarPanelView: View {
     private var header: some View {
         HStack(alignment: .center, spacing: 8) {
             Text(monthTitle)
-                .font(.system(size: isCompactHeader ? 13 : 15, weight: .semibold))
+                .font(.system(isCompactHeader ? .body : .title3).weight(.semibold))
                 .foregroundStyle(Color.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
@@ -180,13 +180,14 @@ struct CalendarPanelView: View {
                         moveYear(-1)
                     } label: {
                         Image(systemName: "chevron.left.2")
-                            .font(.system(size: isCompactHeader ? 10 : 12, weight: .semibold))
+                            .font(.system(isCompactHeader ? .footnote : .callout).weight(.semibold))
                             .frame(width: headerButtonWidth, height: headerButtonHeight)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .hoverHighlight()
                     .help(L10n.text("Previous Year"))
+                    .accessibilityLabel(L10n.text("Previous Year"))
                 }
 
                 HStack(spacing: headerButtonSpacing) {
@@ -194,37 +195,40 @@ struct CalendarPanelView: View {
                         moveMonth(-1)
                     } label: {
                         Image(systemName: "chevron.left")
-                            .font(.system(size: isCompactHeader ? 10 : showYearSwitchButtons ? 12 : 13, weight: .semibold))
+                            .font(.system(isCompactHeader ? .footnote : showYearSwitchButtons ? .callout : .body).weight(.semibold))
                             .frame(width: headerButtonWidth, height: headerButtonHeight)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .hoverHighlight()
                     .help(L10n.text("Previous Month"))
+                    .accessibilityLabel(L10n.text("Previous Month"))
 
                     Button {
                         showToday()
                     } label: {
                         Image(systemName: "smallcircle.filled.circle")
-                            .font(.system(size: isCompactHeader ? 10 : showYearSwitchButtons ? 12 : 13, weight: .semibold))
+                            .font(.system(isCompactHeader ? .footnote : showYearSwitchButtons ? .callout : .body).weight(.semibold))
                             .frame(width: headerButtonWidth, height: headerButtonHeight)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .hoverHighlight()
                     .help(L10n.text("Today"))
+                    .accessibilityLabel(L10n.text("Today"))
 
                     Button {
                         moveMonth(1)
                     } label: {
                         Image(systemName: "chevron.right")
-                            .font(.system(size: isCompactHeader ? 10 : showYearSwitchButtons ? 12 : 13, weight: .semibold))
+                            .font(.system(isCompactHeader ? .footnote : showYearSwitchButtons ? .callout : .body).weight(.semibold))
                             .frame(width: headerButtonWidth, height: headerButtonHeight)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .hoverHighlight()
                     .help(L10n.text("Next Month"))
+                    .accessibilityLabel(L10n.text("Next Month"))
                 }
 
                 if showYearSwitchButtons {
@@ -232,13 +236,14 @@ struct CalendarPanelView: View {
                         moveYear(1)
                     } label: {
                         Image(systemName: "chevron.right.2")
-                            .font(.system(size: isCompactHeader ? 10 : 12, weight: .semibold))
+                            .font(.system(isCompactHeader ? .footnote : .callout).weight(.semibold))
                             .frame(width: headerButtonWidth, height: headerButtonHeight)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .hoverHighlight()
                     .help(L10n.text("Next Year"))
+                    .accessibilityLabel(L10n.text("Next Year"))
                 }
 
                 optionsMenu
@@ -283,7 +288,7 @@ struct CalendarPanelView: View {
             }
         } label: {
             Image(systemName: "ellipsis")
-                .font(.system(size: isCompactHeader ? 10 : showYearSwitchButtons ? 12 : 13, weight: .semibold))
+                .font(.system(isCompactHeader ? .footnote : showYearSwitchButtons ? .callout : .body).weight(.semibold))
                     .foregroundStyle(.primary)
                 .frame(width: optionsMenuWidth, height: optionsMenuHeight)
                 .contentShape(Rectangle())
@@ -292,6 +297,7 @@ struct CalendarPanelView: View {
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
         .help(L10n.text("More"))
+        .accessibilityLabel(L10n.text("More"))
     }
 
     private var dualMonthDisplayBinding: Binding<Bool> {
@@ -329,11 +335,12 @@ struct CalendarPanelView: View {
         HStack(spacing: 0) {
             ForEach(weekdays, id: \.weekday) { weekday in
                 Text(weekday.symbol)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.system(.subheadline).weight(.medium))
                     .foregroundStyle(weekday.isWeekend ? Color.primary.opacity(0.38) : Color.primary.opacity(0.72))
                     .frame(maxWidth: .infinity)
             }
         }
+        .accessibilityElement(children: .combine)
     }
 
     private var monthGrid: some View {
@@ -367,7 +374,7 @@ struct CalendarPanelView: View {
 
                     if showLunar {
                         Text(selectedDateSubtitle)
-                            .font(.system(size: 13))
+                            .font(.system(.body))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
@@ -381,7 +388,7 @@ struct CalendarPanelView: View {
                     showsNewEventPopover = true
                 } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(.callout).weight(.semibold))
                         .foregroundStyle(Color.primary)
                         .frame(width: 20, height: 20)
                         .contentShape(Rectangle())
@@ -389,6 +396,7 @@ struct CalendarPanelView: View {
                 .buttonStyle(.plain)
                 .hoverHighlight(cornerRadius: 6)
                 .help(L10n.text("Add Event"))
+                .accessibilityLabel(L10n.text("Add Event"))
             }
             .popover(
                 isPresented: $showsNewEventPopover,
@@ -410,7 +418,7 @@ struct CalendarPanelView: View {
                             ? L10n.text("Calendar access was denied.")
                             : L10n.text("Calendar access has not been granted.")
                     )
-                        .font(.system(size: 12))
+                        .font(.system(.callout))
                         .foregroundStyle(.secondary)
 
                     if eventsModel.isDenied {
@@ -431,7 +439,7 @@ struct CalendarPanelView: View {
                 .padding(.vertical, 4)
             } else if eventsModel.items.isEmpty {
                 Text(L10n.text("No events for this day."))
-                    .font(.system(size: 12))
+                    .font(.system(.callout))
                     .foregroundStyle(.secondary)
                     .padding(.vertical, 4)
             } else {
@@ -496,7 +504,7 @@ struct CalendarPanelView: View {
             Text(dayTitle)
                 .foregroundStyle(Color.primary)
         }
-        .font(.system(size: 12.5, weight: .semibold))
+        .font(.system(.body).weight(.semibold))
         .lineLimit(1)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -716,11 +724,11 @@ private struct EventRowView: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(event.title)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(.callout).weight(.medium))
                         .foregroundStyle(.primary)
                         .lineLimit(1)
                     Text(timeText)
-                        .font(.system(size: 11))
+                        .font(.system(.subheadline))
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
                         .lineLimit(1)
@@ -738,7 +746,7 @@ private struct EventRowView: View {
 
                         if isInProgress {
                             Text(endsInText)
-                                .font(.system(size: 9))
+                                .font(.system(.caption))
                                 .foregroundStyle(Color.primary.opacity(0.55))
                                 .monospacedDigit()
                                 .lineLimit(1)
@@ -758,6 +766,8 @@ private struct EventRowView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityHint(L10n.text("View Details"))
         .onHover { hovering in
             isHovered = hovering
         }

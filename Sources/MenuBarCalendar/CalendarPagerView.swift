@@ -33,6 +33,7 @@ struct CalendarPagerView: View {
     @State private var pendingTarget: Date?
     @State private var dragOffset: CGFloat = 0
     @State private var animationTask: Task<Void, Never>?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(
         month: Date,
@@ -145,7 +146,7 @@ struct CalendarPagerView: View {
                         onSwipe(-1)
                     }
 
-                    withAnimation(.easeOut(duration: 0.16)) {
+                    withAnimation(reduceMotion ? nil : .easeOut(duration: 0.16)) {
                         dragOffset = 0
                     }
                 }
@@ -193,6 +194,17 @@ struct CalendarPagerView: View {
     private func handleMonthChange(to newMonth: Date) {
         let normalizedMonth = normalizedMonth(for: newMonth)
 
+        // No animation → no rendered frames → the frame-exact completion in
+        // checkTransitionCompletion would never fire and the page would sit
+        // on the old month until the watchdog. Swap states directly instead.
+        if reduceMotion && !isAnimating {
+            sourceMonth = normalizedMonth
+            targetMonth = normalizedMonth
+            transitionTarget = normalizedMonth
+            pendingTarget = nil
+            return
+        }
+
         if isAnimating {
             if calendar.isDate(normalizedMonth, equalTo: sourceMonth, toGranularity: .month) {
                 reverseTransition()
@@ -227,7 +239,7 @@ struct CalendarPagerView: View {
         displayedProgress = 0
         isAnimating = true
 
-        withAnimation(.easeOut(duration: animationDuration)) {
+        withAnimation(reduceMotion ? nil : .easeOut(duration: animationDuration)) {
             animationProgress = 1
         }
 
@@ -239,7 +251,7 @@ struct CalendarPagerView: View {
         transitionTarget = sourceMonth
 
         let remainingDuration = animationDuration * max(0.08, displayedProgress)
-        withAnimation(.easeOut(duration: remainingDuration)) {
+        withAnimation(reduceMotion ? nil : .easeOut(duration: remainingDuration)) {
             animationProgress = 0
         }
 

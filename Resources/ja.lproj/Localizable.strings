@@ -130,3 +130,4 @@
 "Shows in-progress state and time until an event starts." = "進行中の状態と開始までの残り時間を表示します。";
 "Show event duration" = "予定の長さを表示";
 "Shows total event duration after the time range." = "時間範囲の後に予定の合計時間を表示します。";
+"%d events" = "%d件の予定";

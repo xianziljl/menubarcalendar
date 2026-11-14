@@ -130,3 +130,4 @@
 "Shows in-progress state and time until an event starts." = "Shows in-progress state and time until an event starts.";
 "Show event duration" = "Show event duration";
 "Shows total event duration after the time range." = "Shows total event duration after the time range.";
+"%d events" = "%d events";

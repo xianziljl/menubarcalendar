@@ -86,6 +86,11 @@ struct CalendarCellView: View {
 
     @State private var isHovered = false
 
+    // Tiny fonts keep their exact default size but scale with the user's
+    // system text-size setting via @ScaledMetric.
+    @ScaledMetric(relativeTo: .caption2) private var lunarFontSize: CGFloat = 8
+    @ScaledMetric(relativeTo: .caption2) private var badgeFontSize: CGFloat = 7
+
     private var accentColor: Color {
         Color(nsColor: .controlAccentColor)
     }
@@ -106,12 +111,12 @@ struct CalendarCellView: View {
         Button(action: selectDate) {
             VStack(spacing: 1) {
                 Text(dayNumber)
-                    .font(.system(size: 13, weight: isToday ? .bold : .regular))
+                    .font(.system(.body).weight(isToday ? .bold : .regular))
                     .foregroundStyle(isSelected ? todayTextColor : dayTextColor)
                     .overlay(alignment: .topTrailing) {
                         if let badgeText = holidayBadgeText {
                             Text(badgeText)
-                                .font(.system(size: 7, weight: .heavy))
+                                .font(.system(size: badgeFontSize, weight: .heavy))
                                 .foregroundStyle(holidayBadgeColor)
                                 .fixedSize()
                                 .offset(x: 8, y: -5)
@@ -120,7 +125,7 @@ struct CalendarCellView: View {
 
                 if showLunar {
                     Text(lunarDay)
-                        .font(.system(size: 8))
+                        .font(.system(size: lunarFontSize))
                         .foregroundStyle(lunarDayColor)
                         .lineLimit(1)
                         .minimumScaleFactor(0.75)
@@ -144,6 +149,11 @@ struct CalendarCellView: View {
             isHovered = hovering
         }
         .help(holidayHelpText ?? "")
+        // VoiceOver reads the full context (date, lunar, festival, holiday,
+        // event count) instead of just the day number.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(cellAccessibilityDescription)
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
         .padding(.horizontal, 1)
         .padding(.vertical, 1)
     }
@@ -171,6 +181,32 @@ struct CalendarCellView: View {
 
     private var dayNumber: String {
         String(calendar.component(.day, from: date))
+    }
+
+    private var cellAccessibilityDescription: String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .full
+        formatter.timeStyle = .none
+
+        var parts = [formatter.string(from: date)]
+
+        if isToday {
+            parts.append(L10n.text("Today"))
+        }
+        if showFestivals, let info = FestivalModel.info(for: date) {
+            parts.append(info.text)
+        }
+        if showLunar {
+            parts.append(LunarDateFormatter.dayText(for: date))
+        }
+        if let holidayHelpText, !holidayHelpText.isEmpty {
+            parts.append(holidayHelpText)
+        }
+        if !dotColors.isEmpty {
+            parts.append(String(format: L10n.text("%d events"), dotColors.count))
+        }
+
+        return parts.joined(separator: ", ")
     }
 
     private var holidayBadgeText: String? {

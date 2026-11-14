@@ -130,3 +130,4 @@
 "Shows in-progress state and time until an event starts." = "显示日程进行中状态和开始倒计时。";
 "Show event duration" = "显示日程时长";
 "Shows total event duration after the time range." = "在时间范围后显示日程总时长。";
+"%d events" = "%d 个日程";
