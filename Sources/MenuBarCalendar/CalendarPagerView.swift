@@ -128,6 +128,7 @@ struct CalendarPagerView: View {
         .modifier(
             CalendarProgressEffect(progress: animationProgress) { value in
                 displayedProgress = value
+                checkTransitionCompletion(reached: value)
             }
         )
         .offset(x: dragOffset)
@@ -230,7 +231,7 @@ struct CalendarPagerView: View {
             animationProgress = 1
         }
 
-        scheduleCompletion()
+        scheduleCompletionWatchdog()
     }
 
     private func reverseTransition() {
@@ -242,24 +243,46 @@ struct CalendarPagerView: View {
             animationProgress = 0
         }
 
-        scheduleCompletion()
+        scheduleCompletionWatchdog()
     }
 
-    private func scheduleCompletion() {
+    /// Frame-exact completion: the progress callback fires on every rendered
+    /// animation frame, so finishing when the endpoint value arrives works
+    /// regardless of system load (the old fixed-sleep version swapped pages
+    /// mid-animation under load and flashed).
+    private func checkTransitionCompletion(reached value: CGFloat) {
+        guard isAnimating else { return }
+
+        let done = animationProgress > 0.5
+            ? value >= 0.999      // forward: waiting for progress ≈ 1
+            : value <= 0.001      // reverse: waiting for progress ≈ 0
+        guard done else { return }
+
+        finishTransition()
+    }
+
+    /// Safety net for frames that never arrive (view offscreen, animation
+    /// suppressed). Generous enough that the frame-exact path always wins.
+    private func scheduleCompletionWatchdog() {
         animationTask?.cancel()
 
         animationTask = Task { [animationDuration] in
-            let nanoseconds = UInt64((animationDuration + 0.04) * 1_000_000_000)
-            try? await Task.sleep(nanoseconds: nanoseconds)
+            let timeout = UInt64((animationDuration * 5 + 0.5) * 1_000_000_000)
+            try? await Task.sleep(nanoseconds: timeout)
             guard !Task.isCancelled else { return }
             await MainActor.run {
-                finishTransition()
+                if isAnimating {
+                    finishTransition()
+                }
             }
         }
     }
 
     private func finishTransition() {
         guard isAnimating else { return }
+
+        animationTask?.cancel()
+        animationTask = nil
 
         let completedMonth = transitionTarget
         isAnimating = false
